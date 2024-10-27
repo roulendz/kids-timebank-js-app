@@ -1,57 +1,44 @@
+import { HomePage } from './pages/HomePage.js';
+import { ChildrenPage } from './pages/ChildrenPage.js';
 import { Constants } from './utils/Constants.js';
-import { stateManager } from './services/StateManager.js';
-import { WalletButton } from './components/WalletButton.js';
-import { AddWalletButton } from './components/AddWalletButton.js';
 
 class TimebankApp {
     constructor() {
-        this.initializeApp();
+        this.initializeRouter();
     }
 
     /**
-     * Initialize the application
+     * Initialize router
      * @private
      */
-    initializeApp() {
-        document.body.style.backgroundColor = Constants.COLORS.BACKGROUND;
-        this.renderMainPage();
-    }
-
-    /**
-     * Render main page content
-     * @private
-     */
-    renderMainPage() {
-        const elContainer = document.createElement('div');
-        elContainer.className = 'container mx-auto p-8';
-
-        // Title
-        const elTitle = document.createElement('h1');
-        elTitle.className = 'text-4xl font-bold text-center mb-12';
-        elTitle.textContent = 'TimeBank Kids';
-        elContainer.appendChild(elTitle);
-
-        // Wallets container
-        const elWalletsContainer = document.createElement('div');
-        elWalletsContainer.className = 'flex flex-wrap justify-center gap-8';
-
-        // Add user wallets
-        const arUsers = stateManager.getUsers();
-        arUsers.forEach(obUser => {
-            const obWalletButton = new WalletButton(obUser, (sUserId) => {
-                window.location.href = `${Constants.ROUTES.DEPOSIT}?user=${sUserId}`;
-            });
-            elWalletsContainer.appendChild(obWalletButton.element);
-        });
-
-        // Add the "+" button
-        const obAddButton = new AddWalletButton(() => {
-            window.location.href = Constants.ROUTES.CHILDREN;
-        });
-        elWalletsContainer.appendChild(obAddButton.element);
-
-        elContainer.appendChild(elWalletsContainer);
-        document.body.appendChild(elContainer);
+    initializeRouter() {
+        // Get current path without domain and query parameters
+        const sPath = window.location.pathname;
+        
+        console.log('Current path:', sPath); // For debugging
+        
+        // Route to appropriate page
+        switch (sPath) {
+            case Constants.ROUTES.CHILDREN:
+                new ChildrenPage();
+                break;
+            case Constants.ROUTES.DEPOSIT:
+                // TODO: Implement DepositPage
+                console.log('Deposit page not implemented yet');
+                break;
+            case Constants.ROUTES.USE:
+                // TODO: Implement UsePage
+                console.log('Use page not implemented yet');
+                break;
+            case Constants.ROUTES.INDEX:
+            case '/':    // Also handle root path
+                new HomePage();
+                break;
+            default:
+                console.log('Route not found, redirecting to home');
+                window.location.href = Constants.ROUTES.INDEX;
+                break;
+        }
     }
 }
 

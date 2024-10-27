@@ -47,23 +47,71 @@ class StateManager {
     }
 
     /**
+     * Get user by ID
+     * @param {string} sId - User ID
+     * @returns {User|undefined}
+     */
+    getUser(sId) {
+        return this.obState.arUsers.find(user => user.sId === sId);
+    }
+
+    /**
      * Add new user
      * @param {string} sName - User's name
      * @param {string} sNickname - User's nickname
+     * @param {Schedule[]} arSchedule - Weekly schedule
      * @returns {string} New user's ID
      */
-    addUser(sName, sNickname) {
+    addUser(sName, sNickname, arSchedule = []) {
         const obNewUser = {
             sId: crypto.randomUUID(),
             sName,
             sNickname,
             nTimeBalance: 0,
-            arSchedule: []
+            arSchedule
         };
         
         this.obState.arUsers.push(obNewUser);
         this.saveState();
         return obNewUser.sId;
+    }
+
+    /**
+     * Update existing user
+     * @param {User} obUserData - Updated user data
+     */
+    updateUser(obUserData) {
+        const iIndex = this.obState.arUsers.findIndex(user => user.sId === obUserData.sId);
+        if (iIndex !== -1) {
+            // Preserve the time balance when updating
+            const nCurrentBalance = this.obState.arUsers[iIndex].nTimeBalance;
+            this.obState.arUsers[iIndex] = {
+                ...obUserData,
+                nTimeBalance: nCurrentBalance
+            };
+            this.saveState();
+        }
+    }
+
+    /**
+     * Delete user
+     * @param {string} sId - User ID
+     * @returns {boolean} Success status
+     */
+    deleteUser(sId) {
+        // Prevent deletion of default user
+        if (sId === Constants.DEFAULT_USER.sId) {
+            return false;
+        }
+
+        const iInitialLength = this.obState.arUsers.length;
+        this.obState.arUsers = this.obState.arUsers.filter(user => user.sId !== sId);
+        
+        if (this.obState.arUsers.length !== iInitialLength) {
+            this.saveState();
+            return true;
+        }
+        return false;
     }
 }
 
