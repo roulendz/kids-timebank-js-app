@@ -1,9 +1,19 @@
 import { Constants, INITIAL_STATE } from '../utils/Constants.js';
+import { generateId } from '../utils/IdUtils.js';
+
+/**
+ * @typedef {import('../types/Types').User} User
+ * @typedef {import('../types/Types').Schedule} Schedule
+ * @typedef {import('../types/Types').ID} ID
+ */
 
 /**
  * Manages application state and persistence
  */
 class StateManager {
+    /**
+     * Initialize state manager
+     */
     constructor() {
         this.loadState();
         this.ensureDefaultUser();
@@ -48,7 +58,7 @@ class StateManager {
 
     /**
      * Get user by ID
-     * @param {string} sId - User ID
+     * @param {ID} sId - User ID
      * @returns {User|undefined}
      */
     getUser(sId) {
@@ -60,11 +70,11 @@ class StateManager {
      * @param {string} sName - User's name
      * @param {string} sNickname - User's nickname
      * @param {Schedule[]} arSchedule - Weekly schedule
-     * @returns {string} New user's ID
+     * @returns {ID} New user's ID
      */
     addUser(sName, sNickname, arSchedule = []) {
         const obNewUser = {
-            sId: crypto.randomUUID(),
+            sId: generateId(),
             sName,
             sNickname,
             nTimeBalance: 0,
@@ -79,6 +89,7 @@ class StateManager {
     /**
      * Update existing user
      * @param {User} obUserData - Updated user data
+     * @returns {boolean} Success status
      */
     updateUser(obUserData) {
         const iIndex = this.obState.arUsers.findIndex(user => user.sId === obUserData.sId);
@@ -90,12 +101,14 @@ class StateManager {
                 nTimeBalance: nCurrentBalance
             };
             this.saveState();
+            return true;
         }
+        return false;
     }
 
     /**
      * Delete user
-     * @param {string} sId - User ID
+     * @param {ID} sId - User ID to delete
      * @returns {boolean} Success status
      */
     deleteUser(sId) {

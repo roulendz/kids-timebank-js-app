@@ -20,9 +20,20 @@
  */
 
 /**
- * Represents a user (child) in the system
+ * Unique identifier string
+ * @typedef {string} ID
+ */
+
+/**
+ * ID generation options
+ * @typedef {Object} IdOptions
+ * @property {string} [sPrefix] - Optional prefix for the ID
+ * @property {boolean} [bSequential] - Whether to generate sequential ID
+ * 
+/**
+ * User with required ID
  * @typedef {Object} User
- * @property {string} sId - Unique identifier
+ * @property {ID} sId - Unique identifier
  * @property {string} sName - User's full name
  * @property {string} sNickname - User's preferred nickname
  * @property {number} nTimeBalance - Available time balance in seconds
@@ -60,6 +71,8 @@
  * @readonly
  * @enum {string}
  */
+
+
 export const ActivityType = {
     /** Work or study activity that earns time */
     WORK: 'work',

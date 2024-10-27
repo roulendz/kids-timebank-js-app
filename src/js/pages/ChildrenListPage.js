@@ -14,11 +14,14 @@ import { stateManager } from '../services/StateManager.js';
 export class ChildrenListPage extends BasePage {
     /**
      * Renders the children list page content
-     * Creates container, header, add button and list of children
+     * First clears the existing content, then renders new content
      * @override
      * @returns {void}
      */
     render() {
+        // Clear existing content
+        document.body.innerHTML = '';
+
         const elContainer = document.createElement('div');
         elContainer.className = 'container mx-auto p-8';
 
@@ -245,8 +248,10 @@ export class ChildrenListPage extends BasePage {
      */
     handleDelete(obUser) {
         if (confirm(`Are you sure you want to delete ${obUser.sName}'s Time Wallet?`)) {
-            stateManager.deleteUser(obUser.sId);
-            this.render(); // Re-render the page
+            if (stateManager.deleteUser(obUser.sId)) {
+                // Instead of calling render directly, initialize the page again
+                this.initialize();
+            }
         }
     }
 
