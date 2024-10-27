@@ -1,10 +1,22 @@
+/**
+ * @typedef {import('../types/Types').User} User
+ */
+
 import { BasePage } from './BasePage.js';
 import { Constants } from '../utils/Constants.js';
 import { stateManager } from '../services/StateManager.js';
 
+/**
+ * Page component for managing children's time wallets
+ * Lists all children, allows adding new ones, editing and deleting existing ones
+ * @extends BasePage
+ */
 export class ChildrenListPage extends BasePage {
     /**
+     * Renders the children list page content
+     * Creates container, header, add button and list of children
      * @override
+     * @returns {void}
      */
     render() {
         const elContainer = document.createElement('div');
@@ -26,9 +38,9 @@ export class ChildrenListPage extends BasePage {
     }
 
     /**
-     * Create page header with back button
+     * Creates the page header with back button and title
      * @private
-     * @returns {HTMLElement}
+     * @returns {HTMLElement} Header element with back button and title
      */
     createHeader() {
         const elHeader = document.createElement('div');
@@ -51,7 +63,7 @@ export class ChildrenListPage extends BasePage {
             </svg>
         `;
         elBackButton.addEventListener('click', () => {
-            window.location.href = '/';
+            window.location.href = Constants.ROUTES.INDEX;
         });
 
         const elTitle = document.createElement('h1');
@@ -66,9 +78,9 @@ export class ChildrenListPage extends BasePage {
     }
 
     /**
-     * Create add button
+     * Creates the add new wallet button
      * @private
-     * @returns {HTMLElement}
+     * @returns {HTMLElement} Button element for adding new time wallet
      */
     createAddButton() {
         const elAddButton = document.createElement('button');
@@ -89,16 +101,16 @@ export class ChildrenListPage extends BasePage {
             New Time Wallet
         `;
         elAddButton.addEventListener('click', () => {
-            window.location.href = '/children/create';
+            window.location.href = Constants.ROUTES.CHILDREN_CREATE;
         });
 
         return elAddButton;
     }
 
     /**
-     * Create children list
+     * Creates the container with list of all children
      * @private
-     * @returns {HTMLElement}
+     * @returns {HTMLElement} Container element with children cards
      */
     createChildrenList() {
         const elListContainer = document.createElement('div');
@@ -115,10 +127,10 @@ export class ChildrenListPage extends BasePage {
     }
 
     /**
-     * Create card for single child
+     * Creates a card displaying child's information and action buttons
      * @private
-     * @param {User} obUser
-     * @returns {HTMLElement}
+     * @param {User} obUser - User data to display in the card
+     * @returns {HTMLElement} Card element with user information and actions
      */
     createChildCard(obUser) {
         const elCard = document.createElement('div');
@@ -131,7 +143,24 @@ export class ChildrenListPage extends BasePage {
             transform transition-transform hover:scale-101
         `;
 
-        // User info
+        // User info section
+        const elInfo = this.createUserInfo(obUser);
+        elCard.appendChild(elInfo);
+
+        // Actions section
+        const elActions = this.createActionButtons(obUser);
+        elCard.appendChild(elActions);
+
+        return elCard;
+    }
+
+    /**
+     * Creates the user information section of the card
+     * @private
+     * @param {User} obUser - User whose information to display
+     * @returns {HTMLElement} Container with user information
+     */
+    createUserInfo(obUser) {
         const elInfo = document.createElement('div');
         elInfo.className = 'flex-1';
 
@@ -151,7 +180,16 @@ export class ChildrenListPage extends BasePage {
         elInfo.appendChild(elNickname);
         elInfo.appendChild(elTimeBalance);
 
-        // Actions
+        return elInfo;
+    }
+
+    /**
+     * Creates action buttons (edit/delete) for a user card
+     * @private
+     * @param {User} obUser - User for whom to create action buttons
+     * @returns {HTMLElement} Container with action buttons
+     */
+    createActionButtons(obUser) {
         const elActions = document.createElement('div');
         elActions.className = 'flex gap-2';
 
@@ -171,7 +209,7 @@ export class ChildrenListPage extends BasePage {
             </svg>
         `;
         elEditButton.addEventListener('click', () => {
-            window.location.href = `/children/edit/${obUser.sId}`;
+            window.location.href = `${Constants.ROUTES.CHILDREN_EDIT}/${obUser.sId}`;
         });
 
         // Delete button (disabled for default user)
@@ -195,16 +233,15 @@ export class ChildrenListPage extends BasePage {
         }
 
         elActions.appendChild(elEditButton);
-        elCard.appendChild(elInfo);
-        elCard.appendChild(elActions);
-
-        return elCard;
+        return elActions;
     }
 
     /**
-     * Handle user deletion
+     * Handles the deletion of a user
+     * Shows confirmation dialog and deletes if confirmed
      * @private
-     * @param {User} obUser
+     * @param {User} obUser - User to delete
+     * @returns {void}
      */
     handleDelete(obUser) {
         if (confirm(`Are you sure you want to delete ${obUser.sName}'s Time Wallet?`)) {
@@ -214,10 +251,10 @@ export class ChildrenListPage extends BasePage {
     }
 
     /**
-     * Format time balance
+     * Formats time in seconds to a human-readable string
      * @private
-     * @param {number} nSeconds
-     * @returns {string}
+     * @param {number} nSeconds - Time in seconds to format
+     * @returns {string} Formatted time string (e.g., "2h 30m available")
      */
     formatTime(nSeconds) {
         const nHours = Math.floor(nSeconds / 3600);

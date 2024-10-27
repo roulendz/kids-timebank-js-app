@@ -1,5 +1,6 @@
 import { HomePage } from './pages/HomePage.js';
-import { ChildrenPage } from './pages/ChildrenPage.js';
+import { ChildrenListPage } from './pages/ChildrenListPage.js';
+import { ChildFormPage } from './pages/ChildFormPage.js';
 import { Constants } from './utils/Constants.js';
 
 class TimebankApp {
@@ -12,31 +13,44 @@ class TimebankApp {
      * @private
      */
     initializeRouter() {
-        // Get current path without domain and query parameters
+        // Get current path
         const sPath = window.location.pathname;
-        
-        console.log('Current path:', sPath); // For debugging
         
         // Route to appropriate page
         switch (sPath) {
-            case Constants.ROUTES.CHILDREN:
-                new ChildrenPage();
+            case Constants.ROUTES.INDEX:
+                new HomePage();
                 break;
+
+            case Constants.ROUTES.CHILDREN:
+                new ChildrenListPage();
+                break;
+
+            case Constants.ROUTES.CHILDREN_CREATE:
+                new ChildFormPage(null); // null indicates create mode
+                break;
+
             case Constants.ROUTES.DEPOSIT:
                 // TODO: Implement DepositPage
                 console.log('Deposit page not implemented yet');
+                window.location.href = Constants.ROUTES.INDEX;
                 break;
+
             case Constants.ROUTES.USE:
                 // TODO: Implement UsePage
                 console.log('Use page not implemented yet');
-                break;
-            case Constants.ROUTES.INDEX:
-            case '/':    // Also handle root path
-                new HomePage();
-                break;
-            default:
-                console.log('Route not found, redirecting to home');
                 window.location.href = Constants.ROUTES.INDEX;
+                break;
+
+            default:
+                // Check if it's an edit route
+                if (sPath.startsWith(Constants.ROUTES.CHILDREN_EDIT)) {
+                    const sUserId = sPath.split('/').pop();
+                    new ChildFormPage(sUserId);
+                } else {
+                    // Default to home page for unknown routes
+                    window.location.href = Constants.ROUTES.INDEX;
+                }
                 break;
         }
     }

@@ -12,6 +12,8 @@ export const Constants = {
     ROUTES: {
         INDEX: '/',
         CHILDREN: '/children',
+        CHILDREN_CREATE: '/children/create',
+        CHILDREN_EDIT: '/children/edit',
         DEPOSIT: '/deposit',
         USE: '/use'
     },
@@ -30,6 +32,6 @@ export const Constants = {
  * @const
  */
 export const INITIAL_STATE = {
-    arUsers: [Constants.DEFAULT_USER], // Include default user
+    arUsers: [Constants.DEFAULT_USER],
     sCurrentUserId: null
 };
