@@ -1,3 +1,8 @@
+/**
+ * @file src/js/services/StateManager.js
+ * Service for managing application state
+ */
+
 import { Constants, INITIAL_STATE } from '../utils/Constants.js';
 import { generateId } from '../utils/IdUtils.js';
 

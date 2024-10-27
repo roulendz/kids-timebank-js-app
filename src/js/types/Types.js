@@ -163,5 +163,21 @@ export const DayOfWeek = {
     SUNDAY: 'Sunday'
 };
 
+/**
+ * Modal configuration
+ * @typedef {Object} ModalConfig
+ * @property {string} sTitle - Modal title
+ * @property {string} sContent - Modal content
+ * @property {Function} [fnOnConfirm] - Optional confirmation handler
+ * @property {Function} [fnOnCancel] - Optional cancel handler
+ */
+
+// [Rest of your existing Types.js content]
+
+export {
+    WalletType,
+    DepositStatus,
+    DayOfWeek
+};
 // Export type definitions for use in other files
 export {};

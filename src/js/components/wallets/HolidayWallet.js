@@ -3,11 +3,11 @@
  * Holiday wallet component that manages holiday time deposits and bonus calculations
  */
 
-import { TimeDeposit, DepositStatus, WalletType, UserSettings } from '../../../types/Types.js';
-import { StateManager } from '../../../services/StateManager.js';
-import { TimeCalculationService } from '../../../services/TimeCalculationService.js';
-import { DateTimeUtils } from '../../../utils/DateTimeUtils.js';
-import { ModalManager } from '../../modals/ModalManager.js';
+import { TimeDeposit, DepositStatus, WalletType, UserSettings } from '../../types/Types.js';
+import { StateManager } from '../../services/StateManager.js';
+import { TimeCalculationService } from '../../services/TimeCalculationService.js';
+import { DateTimeUtils } from '../../utils/DateTimeUtils.js';
+import { ModalManager } from '../modals/ModalManager.js';
 
 /**
  * Manages holiday wallet functionality including deposits, bonuses, and display
