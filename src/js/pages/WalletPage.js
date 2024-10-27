@@ -4,7 +4,7 @@
 import { BasePage } from './BasePage.js';
 import { HolidayWallet } from '../components/wallets/HolidayWallet.js';
 import { TodayWallet } from '../components/wallets/TodayWallet.js';
-import { StateManager } from '../services/StateManager.js';
+import { stateManager } from '../services/StateManager.js';
 import { TimeCalculationService } from '../services/TimeCalculationService.js';
 import { ModalManager } from '../components/modals/ModalManager.js';
 import { ActivityTrackerTemplate } from '../components/templates/ActivityTrackerTemplate.js';

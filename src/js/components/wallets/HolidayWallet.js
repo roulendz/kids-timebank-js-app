@@ -3,20 +3,33 @@
  * Holiday wallet component that manages holiday time deposits and bonus calculations
  */
 
-import { TimeDeposit, DepositStatus, WalletType, UserSettings } from '../../types/Types.js';
-import { StateManager } from '../../services/StateManager.js';
-import { TimeCalculationService } from '../../services/TimeCalculationService.js';
-import { DateTimeUtils } from '../../utils/DateTimeUtils.js';
-import { ModalManager } from '../modals/ModalManager.js';
+// Since Types.js exports an empty object, we need to use these as type definitions only
+/** @typedef {import('../../types/Types.js').TimeDeposit} TimeDeposit */
+/** @typedef {import('../../types/Types.js').DepositStatus} DepositStatus */
+/** @typedef {import('../../types/Types.js').WalletType} WalletType */
+/** @typedef {import('../../types/Types.js').UserSettings} UserSettings */
+
+// Import the actual values
+const WalletType = {
+    TODAY: 'today',
+    HOLIDAY: 'holiday'
+};
+
+const DepositStatus = {
+    PENDING: 'pending',
+    HOLIDAY_DEPOSITED: 'holiday_deposited',
+    USED: 'used',
+    EXPIRED: 'expired'
+};
 
 /**
  * Manages holiday wallet functionality including deposits, bonuses, and display
  */
 export class HolidayWallet {
     /**
-     * @param {StateManager} stateManager
-     * @param {TimeCalculationService} timeCalculationService
-     * @param {ModalManager} modalManager
+     * @param {Object} stateManager - State management service
+     * @param {Object} timeCalculationService - Time calculation service
+     * @param {Object} modalManager - Modal management service
      */
     constructor(stateManager, timeCalculationService, modalManager) {
         this.stateManager = stateManager;
@@ -29,9 +42,9 @@ export class HolidayWallet {
         /** @type {UserSettings|null} */
         this.userSettings = null;
         
-        this.initializeElements();
-        this.bindEvents();
-        this.loadUserSettings();
+        this._initializeElements();
+        this._bindEvents();
+        this._loadUserSettings();
         this.updateDisplay();
     }
 
@@ -80,7 +93,7 @@ export class HolidayWallet {
 
     /**
      * Update holiday wallet display
-     * @private
+     * @public
      * @async
      */
     async updateDisplay() {
@@ -131,7 +144,7 @@ export class HolidayWallet {
                 <div class="grid grid-cols-3 gap-2 text-sm">
                     <div class="text-gray-600">
                         <div>Deposited:</div>
-                        <div class="font-medium">${DateTimeUtils.formatDuration(deposit.nDepositedTime)}</div>
+                        <div class="font-medium">${this._formatDuration(deposit.nDepositedTime)}</div>
                     </div>
                     <div class="text-green-600">
                         <div>Bonus:</div>
@@ -139,11 +152,23 @@ export class HolidayWallet {
                     </div>
                     <div class="text-blue-600">
                         <div>Total:</div>
-                        <div class="font-medium">${DateTimeUtils.formatDuration(totalTime)}</div>
+                        <div class="font-medium">${this._formatDuration(totalTime)}</div>
                     </div>
                 </div>
             </div>
         `;
+    }
+
+    /**
+     * Format duration in milliseconds to human-readable string
+     * @private
+     * @param {number} duration - Duration in milliseconds
+     * @returns {string}
+     */
+    _formatDuration(duration) {
+        const hours = Math.floor(duration / 3600000);
+        const minutes = Math.floor((duration % 3600000) / 60000);
+        return `${hours}h ${minutes}m`;
     }
 
     /**
@@ -165,7 +190,7 @@ export class HolidayWallet {
     _updateTotalTime() {
         const totalTime = this.deposits.reduce((sum, deposit) => 
             sum + deposit.nDepositedTime + deposit.nBonusTime, 0);
-        this.totalDisplay.textContent = DateTimeUtils.formatDuration(totalTime);
+        this.totalDisplay.textContent = this._formatDuration(totalTime);
     }
 
     /**
@@ -181,7 +206,7 @@ export class HolidayWallet {
         );
         
         this.weekendBonus.textContent = 
-            `Potential Weekend Bonus: ${DateTimeUtils.formatDuration(weekendTotal)}`;
+            `Potential Weekend Bonus: ${this._formatDuration(weekendTotal)}`;
     }
 
     /**
@@ -195,7 +220,7 @@ export class HolidayWallet {
         if (!deposit) return;
 
         const bonusTime = deposit.nBonusTime;
-        const formattedBonus = DateTimeUtils.formatDuration(bonusTime);
+        const formattedBonus = this._formatDuration(bonusTime);
 
         const confirmed = await this.modalManager.showConfirmation({
             sTitle: 'Cancel Holiday Deposit?',

@@ -3,7 +3,11 @@
  * Service for handling time calculations, week numbers, and bonus calculations
  */
 
-import { TimeDeposit, WalletType } from '../types/Types.js';
+/**
+ * @typedef {import('../types/Types').TimeDeposit} TimeDeposit
+ */
+
+import { WalletType } from '../types/Types.js';
 
 export class TimeCalculationService {
     /**

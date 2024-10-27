@@ -3,7 +3,9 @@
  * Manages modal dialogs for the application
  */
 
-import { ModalConfig } from '../../types/Types.js';
+/**
+ * @typedef {import('../../types/Types').ModalConfig} ModalConfig
+ */
 
 export class ModalManager {
     constructor() {

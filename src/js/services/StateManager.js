@@ -15,13 +15,20 @@ import { generateId } from '../utils/IdUtils.js';
 /**
  * Manages application state and persistence
  */
-class StateManager {
+export class StateManager {  // Keep uppercase S here as it's the class definition
     /**
      * Initialize state manager
+     * @private
      */
     constructor() {
+        if (StateManager.instance) {  // Keep uppercase S for class reference
+            return StateManager.instance;  // Keep uppercase S for class reference
+        }
+        
         this.loadState();
         this.ensureDefaultUser();
+        
+        StateManager.instance = this;  // Keep uppercase S for class reference
     }
 
     /**

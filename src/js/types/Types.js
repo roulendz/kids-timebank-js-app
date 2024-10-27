@@ -72,9 +72,7 @@
  * @enum {string}
  */
 export const WalletType = {
-    /** Today's activities wallet */
     TODAY: 'today',
-    /** Holiday savings wallet */
     HOLIDAY: 'holiday'
 };
 
@@ -84,22 +82,34 @@ export const WalletType = {
  * @enum {string}
  */
 export const DepositStatus = {
-    /** Activity time pending in today's wallet */
     PENDING: 'pending',
-    /** Time deposited to holiday wallet */
     HOLIDAY_DEPOSITED: 'holiday_deposited',
-    /** Time used today */
     USED: 'used',
-    /** Time expired */
     EXPIRED: 'expired'
 };
 
 /**
- * Activity time deposit
+ * Days of week enumeration
+ * @readonly
+ * @enum {string}
+ */
+export const DayOfWeek = {
+    MONDAY: 'Monday',
+    TUESDAY: 'Tuesday',
+    WEDNESDAY: 'Wednesday',
+    THURSDAY: 'Thursday',
+    FRIDAY: 'Friday',
+    SATURDAY: 'Saturday',
+    SUNDAY: 'Sunday'
+};
+
+
+/**
+ /**
  * @typedef {Object} TimeDeposit
- * @property {ID} sId - Unique identifier
- * @property {ID} sUserId - User ID
- * @property {ID} sActivityId - Related activity ID
+ * @property {string} sId - Unique identifier
+ * @property {string} sUserId - User ID
+ * @property {string} sActivityId - Related activity ID
  * @property {WalletType} sWalletType - Wallet type
  * @property {DepositStatus} sStatus - Deposit status
  * @property {number} nDepositedTime - Original deposited time in milliseconds
@@ -107,7 +117,6 @@ export const DepositStatus = {
  * @property {number} nDepositTimestamp - When the deposit was made
  * @property {number} nWeekNumber - ISO week number
  * @property {number} nYear - Year of deposit
- */
 
 /**
  * User settings
@@ -148,36 +157,5 @@ export const DepositStatus = {
  */
 
 
-/**
- * Days of week enumeration
- * @readonly
- * @enum {string}
- */
-export const DayOfWeek = {
-    MONDAY: 'Monday',
-    TUESDAY: 'Tuesday',
-    WEDNESDAY: 'Wednesday',
-    THURSDAY: 'Thursday',
-    FRIDAY: 'Friday',
-    SATURDAY: 'Saturday',
-    SUNDAY: 'Sunday'
-};
-
-/**
- * Modal configuration
- * @typedef {Object} ModalConfig
- * @property {string} sTitle - Modal title
- * @property {string} sContent - Modal content
- * @property {Function} [fnOnConfirm] - Optional confirmation handler
- * @property {Function} [fnOnCancel] - Optional cancel handler
- */
-
-// [Rest of your existing Types.js content]
-
-export {
-    WalletType,
-    DepositStatus,
-    DayOfWeek
-};
 // Export type definitions for use in other files
 export {};

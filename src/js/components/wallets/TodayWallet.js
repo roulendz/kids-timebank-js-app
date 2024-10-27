@@ -1,20 +1,19 @@
 /**
- * @file src\js\components\wallets\TodayWallet.js
+ * @file src/js/components/wallets/TodayWallet.js
  * Manages the today's wallet functionality including activity tracking and time calculations
  */
 
-import { TimeTrackingState, Activity, TimeDeposit, DepositStatus, WalletType } from '../types/Types';
-import { StateManager } from '../../services/StateManager';
-import { DateTimeUtils } from '../../utils/DateTimeUtils';
-import { TimeCalculationService } from '../../services/TimeCalculationService';
+import { TimeTrackingState, Activity, TimeDeposit, DepositStatus, WalletType } from '../../types/Types.js';
+import { stateManager } from '../../services/StateManager.js';
+import { DateTimeUtils } from '../../utils/DateTimeUtils.js';
+import { TimeCalculationService } from '../../services/TimeCalculationService.js';
 
 export class TodayWallet {
-     /**
-     * @param {StateManager} stateManager
+    /**
      * @param {TimeCalculationService} timeCalculationService
      */
-     constructor(stateManager, timeCalculationService) {
-        this.stateManager = stateManager;
+    constructor(timeCalculationService) {
+        this.stateManager = stateManager; // Use the singleton instance
         this.timeCalculationService = timeCalculationService;
         
         /** @type {TimeTrackingState} */
