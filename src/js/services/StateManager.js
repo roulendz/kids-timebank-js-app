@@ -6,6 +6,7 @@ import { Constants, INITIAL_STATE } from '../utils/Constants.js';
 class StateManager {
     constructor() {
         this.loadState();
+        this.ensureDefaultUser();
     }
 
     /**
@@ -15,6 +16,18 @@ class StateManager {
     loadState() {
         const sStoredState = localStorage.getItem(Constants.LOCAL_STORAGE_KEY);
         this.obState = sStoredState ? JSON.parse(sStoredState) : INITIAL_STATE;
+    }
+
+    /**
+     * Ensure default user exists
+     * @private
+     */
+    ensureDefaultUser() {
+        if (!this.obState.arUsers.length || 
+            !this.obState.arUsers.some(user => user.sId === Constants.DEFAULT_USER.sId)) {
+            this.obState.arUsers = [Constants.DEFAULT_USER, ...this.obState.arUsers];
+            this.saveState();
+        }
     }
 
     /**

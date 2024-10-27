@@ -15,7 +15,14 @@ export const Constants = {
         DEPOSIT: '/deposit',
         USE: '/use'
     },
-    LOCAL_STORAGE_KEY: 'timebankKidsState'
+    LOCAL_STORAGE_KEY: 'timebankKidsState',
+    DEFAULT_USER: {
+        sId: '1',
+        sName: 'Kid 1',
+        sNickname: 'Kid 1',
+        nTimeBalance: 0,
+        arSchedule: []
+    }
 };
 
 /**
@@ -23,6 +30,6 @@ export const Constants = {
  * @const
  */
 export const INITIAL_STATE = {
-    arUsers: [],
+    arUsers: [Constants.DEFAULT_USER], // Include default user
     sCurrentUserId: null
 };
