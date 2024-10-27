@@ -1,3 +1,6 @@
+/**
+ * @file src/js/pages/HomePage.js
+ */
 import { BasePage } from './BasePage.js';
 import { Constants } from '../utils/Constants.js';
 import { stateManager } from '../services/StateManager.js';
@@ -29,7 +32,7 @@ export class HomePage extends BasePage {
         const arUsers = stateManager.getUsers();
         arUsers.forEach(obUser => {
             const obWalletButton = new WalletButton(obUser, (sUserId) => {
-                window.location.href = `${Constants.ROUTES.DEPOSIT}?user=${sUserId}`;
+                window.location.href = `${Constants.ROUTES.CHILDREN_WALLET}/${sUserId}`;
             });
             elWalletsContainer.appendChild(obWalletButton.element);
         });
