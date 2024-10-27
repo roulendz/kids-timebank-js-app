@@ -67,18 +67,86 @@
  */
 
 /**
- * Activity types enumeration
+ * Wallet types enumeration
  * @readonly
  * @enum {string}
  */
-
-
-export const ActivityType = {
-    /** Work or study activity that earns time */
-    WORK: 'work',
-    /** Recreational activity that spends time */
-    RECREATIONAL: 'recreational'
+export const WalletType = {
+    /** Today's activities wallet */
+    TODAY: 'today',
+    /** Holiday savings wallet */
+    HOLIDAY: 'holiday'
 };
+
+/**
+ * Activity deposit status
+ * @readonly
+ * @enum {string}
+ */
+export const DepositStatus = {
+    /** Activity time pending in today's wallet */
+    PENDING: 'pending',
+    /** Time deposited to holiday wallet */
+    HOLIDAY_DEPOSITED: 'holiday_deposited',
+    /** Time used today */
+    USED: 'used',
+    /** Time expired */
+    EXPIRED: 'expired'
+};
+
+/**
+ * Activity time deposit
+ * @typedef {Object} TimeDeposit
+ * @property {ID} sId - Unique identifier
+ * @property {ID} sUserId - User ID
+ * @property {ID} sActivityId - Related activity ID
+ * @property {WalletType} sWalletType - Wallet type
+ * @property {DepositStatus} sStatus - Deposit status
+ * @property {number} nDepositedTime - Original deposited time in milliseconds
+ * @property {number} nBonusTime - Bonus time earned in milliseconds
+ * @property {number} nDepositTimestamp - When the deposit was made
+ * @property {number} nWeekNumber - ISO week number
+ * @property {number} nYear - Year of deposit
+ */
+
+/**
+ * User settings
+ * @typedef {Object} UserSettings
+ * @property {boolean} bAutoDepositToHoliday - Auto deposit unused time to holiday wallet
+ * @property {boolean} bWeekendTimeToNextWeek - Move weekend time to next week
+ * @property {number} nHolidayBonusPercentage - Bonus percentage for holiday wallet
+ * @property {number} nWeeklyBonusPercentage - Bonus percentage for full week deposits
+ */
+
+/**
+ * Extended user type with settings
+ * @typedef {Object} UserExtended
+ * @property {ID} sId - Unique identifier
+ * @property {string} sName - User's full name
+ * @property {string} sNickname - User's preferred nickname
+ * @property {UserSettings} obSettings - User settings
+ * @property {Schedule[]} arSchedule - Weekly schedule for using time
+ * @property {Activity[]} [arActivityLog] - Optional array of activity logs
+ * @property {TimeDeposit[]} [arDeposits] - Array of time deposits
+ */
+
+/**
+ * Time tracking state
+ * @typedef {Object} TimeTrackingState
+ * @property {boolean} bIsTracking - Whether time tracking is active
+ * @property {number|null} nStartTime - Tracking start timestamp
+ * @property {string} sCurrentActivityDescription - Current activity description
+ */
+
+/**
+ * Modal configuration
+ * @typedef {Object} ModalConfig
+ * @property {string} sTitle - Modal title
+ * @property {string} sContent - Modal content
+ * @property {Function} fnOnConfirm - Confirmation handler
+ * @property {Function} fnOnCancel - Cancel handler
+ */
+
 
 /**
  * Days of week enumeration
