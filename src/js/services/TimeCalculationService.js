@@ -139,4 +139,47 @@ export class TimeCalculationService {
         // Require deposits on at least 5 different days
         return uniqueDays.size >= 5;
     }
+
+    async stopTracking() {
+        if (!this.trackingState.bIsTracking) return;
+    
+        const endTime = Date.now();
+        const duration = endTime - this.trackingState.nStartTime;
+    
+        const activity = {
+            sId: generateId(),
+            sType: 'work',
+            sDescription: this.trackingState.sCurrentActivityDescription || 'Unnamed activity',
+            nStartTime: this.trackingState.nStartTime,
+            nEndTime: endTime,
+            nDuration: duration,
+            sUserId: this.stateManager.getCurrentUserId()
+        };
+    
+        const deposit = {
+            sId: generateId(),
+            sUserId: activity.sUserId,
+            sActivityId: activity.sId,
+            sWalletType: WalletType.TODAY,
+            sStatus: DepositStatus.PENDING,
+            nDepositedTime: duration,
+            nBonusTime: 0,
+            nDepositTimestamp: Date.now(),
+            nWeekNumber: this.timeCalculationService.calculateWeekNumber(new Date()), // Call calculateWeekNumber correctly
+            nYear: new Date().getFullYear()
+        };
+    
+        await this.stateManager.addActivity(activity);
+        await this.stateManager.addDeposit(deposit);
+    
+        clearInterval(this.timerInterval);
+        this.trackingState.bIsTracking = false;
+        this.trackingState.nStartTime = null;
+        this.trackingState.sCurrentActivityDescription = '';
+    
+        this.timerContainer.classList.add('hidden');
+        this.startButtonContainer.classList.remove('hidden');
+        this.updateActivitiesList();
+    }
+    
 }
