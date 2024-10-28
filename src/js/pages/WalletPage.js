@@ -1,14 +1,15 @@
-/**
- * @file src/js/pages/WalletPage.js
- */
 import { BasePage } from './BasePage.js';
 import { HolidayWallet } from '../components/wallets/HolidayWallet.js';
 import { TodayWallet } from '../components/wallets/TodayWallet.js';
-import { stateManager } from '../services/StateManager.js';
+import { stateManager } from '../services/StateManager.js';  // Import singleton instance
 import { TimeCalculationService } from '../services/TimeCalculationService.js';
 import { ModalManager } from '../components/modals/ModalManager.js';
 import { ActivityTrackerTemplate } from '../components/templates/ActivityTrackerTemplate.js';
+import { Constants } from '../utils/Constants.js';
 
+/**
+ * Page representing the wallet of a specific user
+ */
 export class WalletPage extends BasePage {
     /**
      * @param {string} sUserId - User ID whose wallet to display
@@ -16,6 +17,7 @@ export class WalletPage extends BasePage {
     constructor(sUserId) {
         super();
         this.sUserId = sUserId;
+        console.log("sUserId:", this.sUserId);
         this.initialize();
     }
 
@@ -24,19 +26,21 @@ export class WalletPage extends BasePage {
      * @private
      */
     async initialize() {
-        // Initialize services
-        const stateManager = new StateManager();
         const timeCalculationService = new TimeCalculationService();
         const modalManager = new ModalManager();
-
+    
+        // Ensure stateManager is initialized
+        await stateManager.init();
+    
         // Verify user exists
         const user = stateManager.getUser(this.sUserId);
+        console.log("User after ensuring state load:", user);
         if (!user) {
             window.location.href = Constants.ROUTES.INDEX;
             return;
         }
 
-        // Set current user
+        // Set current user in the state manager
         stateManager.setCurrentUserId(this.sUserId);
 
         // Create page layout
@@ -52,7 +56,7 @@ export class WalletPage extends BasePage {
         `;
         mainContainer.insertBefore(userHeader, mainContainer.firstChild);
 
-        document.getElementById('app').appendChild(mainContainer);
+        document.body.appendChild(mainContainer);
 
         // Initialize wallet components
         this.todayWallet = new TodayWallet(
