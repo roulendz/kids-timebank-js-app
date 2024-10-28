@@ -1,13 +1,16 @@
+import { Constants } from '../utils/Constants.js';
+
 /**
- * Creates a time wallet button for a user
+ * Wallet button component for each user
  */
 export class WalletButton {
     /**
      * @param {User} obUser - User data
-     * @param {Function} fnOnClick - Click handler
+     * @param {Function} fnOnClick - Callback function to handle navigation
      */
     constructor(obUser, fnOnClick) {
         this.obUser = obUser;
+        this.walletUrl = `${Constants.ROUTES.CHILDREN_WALLET}/${obUser.sId}`;
         this.fnOnClick = fnOnClick;
         this.element = this.createButton();
     }
@@ -18,7 +21,8 @@ export class WalletButton {
      * @returns {HTMLElement}
      */
     createButton() {
-        const elButton = document.createElement('button');
+        // Use a `div` instead of `button` to avoid form submission behavior
+        const elButton = document.createElement('div');
         elButton.className = `
             w-64 h-64 
             rounded-full 
@@ -28,6 +32,7 @@ export class WalletButton {
             shadow-lg
             bg-purple-100 hover:bg-purple-200
             m-4
+            cursor-pointer
         `;
 
         const elTitle = document.createElement('div');
@@ -46,7 +51,13 @@ export class WalletButton {
         elButton.appendChild(elName);
         elButton.appendChild(elBalance);
 
-        elButton.addEventListener('click', () => this.fnOnClick(this.obUser.sId));
+        // Use callback to handle click and navigation in `app.js`
+        elButton.addEventListener('click', (e) => {
+            e.preventDefault();
+            if (this.fnOnClick) {
+                this.fnOnClick(this.obUser.sId);
+            }
+        });
 
         return elButton;
     }
