@@ -3,11 +3,25 @@
  * Manages the today's wallet functionality including activity tracking and time calculations
  */
 
-import { TimeTrackingState, Activity, TimeDeposit, DepositStatus, WalletType } from '../../types/Types.js';
+// Import types and enums - make sure paths match your project structure
+import { 
+    WalletType, 
+    DepositStatus 
+} from '../../types/Types.js';
+
+// Use JSDoc imports for complex types
+/** @typedef {import('../../types/Types.js').TimeTrackingState} TimeTrackingState */
+/** @typedef {import('../../types/Types.js').Activity} Activity */
+/** @typedef {import('../../types/Types.js').TimeDeposit} TimeDeposit */
+
+// Import services
 import { stateManager } from '../../services/StateManager.js';
 import { DateTimeUtils } from '../../utils/DateTimeUtils.js';
 import { TimeCalculationService } from '../../services/TimeCalculationService.js';
 
+/**
+ * Manages the today's wallet functionality including activity tracking and time calculations
+ */
 export class TodayWallet {
     /**
      * @param {TimeCalculationService} timeCalculationService
