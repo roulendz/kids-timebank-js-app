@@ -1,4 +1,5 @@
 /**
+ * @file src/js/utils/Constants.js
  * Application constants
  * @const
  */
