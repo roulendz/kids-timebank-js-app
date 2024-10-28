@@ -27,7 +27,7 @@ export class StateManager {
     }
 
     async init() {
-        await this.loadState(); // Load state asynchronously
+        await this.loadState();
         this.ensureDefaultUser();
     }
 
@@ -79,6 +79,37 @@ export class StateManager {
     }
 
     /**
+     * Get the current user ID
+     * @returns {string|null} - Current user ID or null if not set
+     */
+    getCurrentUserId() {
+        return this.obState.sCurrentUserId || null;
+    }
+
+    /**
+     * Get user settings by user ID
+     * @param {string} userId - The user ID to get settings for
+     * @returns {Promise<UserSettings|null>} - User settings object or null if not found
+     */
+    async getUserSettings(userId) {
+        const user = this.getUser(userId);
+        return user ? user : null;
+    }
+
+    /**
+     * Get deposits for a given user
+     * @param {string} userId - ID of the user
+     * @returns {Promise<TimeDeposit[]>} - Array of time deposits
+     */
+    async getDeposits(userId) {
+        const user = this.getUser(userId);
+        if (user && user.arDeposits) {
+            return user.arDeposits;
+        }
+        return [];
+    }
+    
+    /**
      * Add new user
      * @param {string} sName - User's name
      * @param {string} sNickname - User's nickname
@@ -125,7 +156,6 @@ export class StateManager {
      * @returns {boolean} Success status
      */
     deleteUser(sId) {
-        // Prevent deletion of default user
         if (sId === Constants.DEFAULT_USER.sId) {
             return false;
         }
