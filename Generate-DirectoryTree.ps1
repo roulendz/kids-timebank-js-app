@@ -9,7 +9,7 @@ $SPACE = "    "
 # Collection to store all paths
 $script:allPaths = @()
 
-function Generate-DirectoryTree {
+function Get-DirectoryTree {
     param (
         [string]$Path = ".",
         [string]$Indent = "",
