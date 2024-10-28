@@ -1,4 +1,5 @@
 /**
+ * @file src/js/utils/IdUtils.js
  * Utility functions for ID generation
  * @module IdUtils
  */
