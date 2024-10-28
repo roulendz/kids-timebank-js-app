@@ -8,6 +8,7 @@ import {
     WalletType, 
     DepositStatus 
 } from '../../types/Types.js';
+import { generateId } from '../../utils/IdUtils.js';
 
 // Use JSDoc imports for complex types
 /** @typedef {import('../../types/Types.js').TimeTrackingState} TimeTrackingState */
@@ -19,18 +20,24 @@ import { stateManager } from '../../services/StateManager.js';
 import { DateTimeUtils } from '../../utils/DateTimeUtils.js';
 import { TimeCalculationService } from '../../services/TimeCalculationService.js';
 
+// Initialize an instance of TimeCalculationService
+const timeCalculationService = new TimeCalculationService();
+
 /**
  * Manages the today's wallet functionality including activity tracking and time calculations
  */
 export class TodayWallet {
     /**
-     * @param {TimeCalculationService} timeCalculationService
+     * @param {Object} stateManager - State management service
+     * @param {Object} timeCalculationService - Time calculation service
+     * @param {Object} modalManager - Modal management service
      */
-    constructor(timeCalculationService) {
-        this.stateManager = stateManager; // Use the singleton instance
+    constructor(stateManager, timeCalculationService, modalManager) {
+        this.stateManager = stateManager;
         this.timeCalculationService = timeCalculationService;
-        
-        /** @type {TimeTrackingState} */
+        this.modalManager = modalManager;
+
+        // Initialize state and bind events as necessary
         this.trackingState = {
             bIsTracking: false,
             nStartTime: null,
@@ -93,8 +100,7 @@ export class TodayWallet {
         // Create activity record
         /** @type {Activity} */
         const activity = {
-            sId: crypto.randomUUID(),
-            sType: 'work',
+            sId: generateId(),
             sDescription: this.trackingState.sCurrentActivityDescription || 'Unnamed activity',
             nStartTime: this.trackingState.nStartTime,
             nEndTime: endTime,
@@ -105,7 +111,7 @@ export class TodayWallet {
         // Create time deposit
         /** @type {TimeDeposit} */
         const deposit = {
-            sId: crypto.randomUUID(),
+            sId: generateId(),
             sUserId: activity.sUserId,
             sActivityId: activity.sId,
             sWalletType: WalletType.TODAY,
@@ -132,6 +138,7 @@ export class TodayWallet {
         this.startButtonContainer.classList.remove('hidden');
         this.updateActivitiesList();
     }
+
 
     /**
      * Update timer display
