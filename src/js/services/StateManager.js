@@ -15,35 +15,27 @@ import { generateId } from '../utils/IdUtils.js';
 /**
  * Manages application state and persistence
  */
-export class StateManager {  // Keep uppercase S here as it's the class definition
-    /**
-     * Initialize state manager
-     * @private
-     */
+export class StateManager {
     constructor() {
-        if (StateManager.instance) {  // Keep uppercase S for class reference
-            return StateManager.instance;  // Keep uppercase S for class reference
+        if (StateManager.instance) {
+            return StateManager.instance;
         }
-        
-        this.loadState();
-        this.ensureDefaultUser();
-        
-        StateManager.instance = this;  // Keep uppercase S for class reference
+
+        this.obState = null; // Initialize state as null until loaded
+        StateManager.instance = this;
+        this.init();
     }
 
-    /**
-     * Load state from localStorage
-     * @private
-     */
-    loadState() {
+    async init() {
+        await this.loadState(); // Load state asynchronously
+        this.ensureDefaultUser();
+    }
+
+    async loadState() {
         const sStoredState = localStorage.getItem(Constants.LOCAL_STORAGE_KEY);
         this.obState = sStoredState ? JSON.parse(sStoredState) : INITIAL_STATE;
     }
 
-    /**
-     * Ensure default user exists
-     * @private
-     */
     ensureDefaultUser() {
         if (!this.obState.arUsers.length || 
             !this.obState.arUsers.some(user => user.sId === Constants.DEFAULT_USER.sId)) {
@@ -75,6 +67,15 @@ export class StateManager {  // Keep uppercase S here as it's the class definiti
      */
     getUser(sId) {
         return this.obState.arUsers.find(user => user.sId === sId);
+    }
+
+    /**
+     * Set the current user ID
+     * @param {string} sUserId - User ID to set as the current user
+     */
+    setCurrentUserId(sUserId) {
+        this.obState.sCurrentUserId = sUserId;
+        this.saveState();
     }
 
     /**
