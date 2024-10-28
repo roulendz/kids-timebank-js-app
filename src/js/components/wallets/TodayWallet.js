@@ -47,6 +47,7 @@ export class TodayWallet {
         this.timerInterval = null;
         this.initializeElements();
         this.bindEvents();
+        this.updateActivitiesList();
     }
 
     /**
