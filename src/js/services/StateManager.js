@@ -53,6 +53,50 @@ export class StateManager {
     }
 
     /**
+     * Add a new activity for the current user
+     * @param {Activity} activity - Activity data to add
+     */
+    async addActivity(activity) {
+        const user = this.getUser(activity.sUserId);
+        if (user) {
+            if (!user.arActivityLog) {
+                user.arActivityLog = [];
+            }
+            user.arActivityLog.push(activity);
+            this.saveState();
+        } else {
+            throw new Error(`User with ID ${activity.sUserId} not found`);
+        }
+    }
+
+    /**
+     * Add a new deposit for the current user
+     * @param {TimeDeposit} deposit - Deposit data to add
+     */
+    async addDeposit(deposit) {
+        const user = this.getUser(deposit.sUserId);
+        if (user) {
+            if (!user.arDeposits) {
+                user.arDeposits = [];
+            }
+            user.arDeposits.push(deposit);
+            this.saveState();
+        } else {
+            throw new Error(`User with ID ${deposit.sUserId} not found`);
+        }
+    }
+
+    /**
+     * Get activities for a given user
+     * @param {string} userId - ID of the user
+     * @returns {Promise<Activity[]>} - Array of activities
+     */
+    async getActivities(userId) {
+        const user = this.getUser(userId);
+        return user && user.arActivityLog ? user.arActivityLog : [];
+    }
+
+    /**
      * Get all users
      * @returns {User[]}
      */
@@ -108,7 +152,7 @@ export class StateManager {
         }
         return [];
     }
-    
+
     /**
      * Add new user
      * @param {string} sName - User's name
