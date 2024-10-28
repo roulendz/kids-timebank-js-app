@@ -14,6 +14,7 @@ export const Constants = {
         CHILDREN: '/children',
         CHILDREN_CREATE: '/children/create',
         CHILDREN_EDIT: '/children/edit',
+        CHILDREN_WALLET: '/children/wallet',
         DEPOSIT: '/deposit',
         USE: '/use'
     },
