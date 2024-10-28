@@ -43,20 +43,15 @@ export class WalletPage extends BasePage {
         // Set current user in the state manager
         stateManager.setCurrentUserId(this.sUserId);
 
-        // Create page layout
-        const template = new ActivityTrackerTemplate();
-        const mainContainer = template.createLayout();
-        
-        // Add user info header
-        const userHeader = document.createElement('div');
-        userHeader.className = 'bg-white shadow-sm p-4 mb-6 rounded-lg';
-        userHeader.innerHTML = `
-            <h1 class="text-2xl font-bold">${user.sName}'s Wallet</h1>
-            <p class="text-gray-600">Manage time and activities</p>
-        `;
-        mainContainer.insertBefore(userHeader, mainContainer.firstChild);
+        // Check if the main container is already appended
+        if (!document.getElementById('walletContainer')) {
+            // Create page layout
+            const template = new ActivityTrackerTemplate();
+            const mainContainer = template.createLayout();
+            mainContainer.id = 'walletContainer';  // Add unique ID to prevent duplication
 
-        document.body.appendChild(mainContainer);
+            document.body.appendChild(mainContainer);
+        }
 
         // Initialize wallet components
         this.todayWallet = new TodayWallet(
