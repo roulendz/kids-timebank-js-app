@@ -10,6 +10,7 @@ import { generateId } from '../utils/IdUtils.js';
  * @typedef {import('../types/Types').User} User
  * @typedef {import('../types/Types').Schedule} Schedule
  * @typedef {import('../types/Types').ID} ID
+ * @typedef {import('../types/Types').TimeTrackingState} TimeTrackingState
  */
 
 /**
@@ -33,7 +34,28 @@ export class StateManager {
 
     async loadState() {
         const sStoredState = localStorage.getItem(Constants.LOCAL_STORAGE_KEY);
-        this.obState = sStoredState ? JSON.parse(sStoredState) : INITIAL_STATE;
+        this.obState = sStoredState ? JSON.parse(sStoredState) : {
+            ...INITIAL_STATE,
+            obTrackingState: null
+        };
+    }
+
+    /**
+     * Get the current tracking state
+     * @returns {Promise<TimeTrackingState|null>}
+     */
+    async getTrackingState() {
+        return this.obState.obTrackingState || null;
+    }
+
+    /**
+     * Save the current tracking state
+     * @param {TimeTrackingState} state
+     * @returns {Promise<void>}
+     */
+    async saveTrackingState(state) {
+        this.obState.obTrackingState = state;
+        this.saveState();
     }
 
     ensureDefaultUser() {
