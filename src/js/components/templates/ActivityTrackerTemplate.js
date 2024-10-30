@@ -1,5 +1,6 @@
 /**
- * @file ActivityTrackerTemplate.js
+ * @file /src/js/components/templates/ActivityTrackerTemplate.js
+ * @typedef {import('../../types/Types').ActivityTrackerConfig} ActivityTrackerConfig
  * Defines the layout template for the activity tracking page
  */
 
@@ -36,37 +37,42 @@ export class ActivityTrackerTemplate {
         const trackerSection = document.createElement('div');
         trackerSection.className = 'flex-1 bg-white rounded-lg shadow-lg p-6';
         trackerSection.innerHTML = `
-            <div id="activityTracker" class="h-full flex flex-col gap-4">
+            <div id="activityTracker" class="h-full flex flex-col">
                 <div id="startButtonContainer" class="flex-1 flex items-center justify-center">
-                    <button id="startTracking" class="w-64 h-64 bg-green-500 hover:bg-green-600 text-white rounded-3xl shadow-lg transform transition-all duration-300 flex flex-col items-center justify-center">
+                    <button 
+                        data-action="start-tracking" 
+                        id="startTracking"
+                        class="w-64 h-64 bg-green-500 hover:bg-green-600 text-white rounded-3xl shadow-lg transform transition-all duration-300 flex flex-col items-center justify-center">
                         <span class="text-4xl font-bold mb-2">START</span>
                         <span class="text-sm">DEPOSITING ACTIVITY TIME</span>
                     </button>
                 </div>
-                <div id="timerContainer" class="flex-1 hidden flex-col items-center justify-center">
-                    <div id="timer" class="text-6xl font-bold mb-4">00:00:00</div>
-                    <button id="stopTracking" class="w-48 h-48 bg-red-500 hover:bg-red-600 text-white rounded-3xl shadow-lg flex flex-col items-center justify-center">
-                        <span class="text-2xl font-bold mb-2">STOP</span>
-                        <span class="text-sm text-center">ACTIVITY AND<br>DEPOSIT TO MY BANK</span>
-                    </button>
+                <div id="timerContainer" class="hidden h-full">
+                    <div class="h-full flex flex-col items-center justify-center">
+                        <div id="timer" class="text-6xl font-bold mb-8">00:00:00</div>
+                        <button 
+                            data-action="stop-tracking"
+                            id="stopTracking" 
+                            class="w-48 h-48 bg-red-500 hover:bg-red-600 text-white rounded-3xl shadow-lg flex flex-col items-center justify-center">
+                            <span class="text-2xl font-bold mb-2">STOP</span>
+                            <span class="text-sm text-center">ACTIVITY AND<br>DEPOSIT TO MY BANK</span>
+                        </button>
+                    </div>
                 </div>
             </div>
         `;
 
-        // Activities List Section
+        // Add Today's Activities List Section
         const activitiesSection = document.createElement('div');
         activitiesSection.className = 'flex-1 bg-white rounded-lg shadow-lg p-6';
         activitiesSection.innerHTML = `
-            <div class="flex justify-between items-center mb-4">
-                <h2 class="text-xl font-bold">Today's Activities</h2>
-            </div>
-            <div id="activitiesList" class="h-[calc(100%-2rem)] overflow-y-auto">
-                <!-- Activities will be inserted here dynamically -->
-            </div>
+            <h2 class="text-xl font-bold mb-4">Today's Activities</h2>
+            <div id="activitiesList" class="space-y-2"></div>
         `;
 
         leftColumn.appendChild(trackerSection);
         leftColumn.appendChild(activitiesSection);
+
         return leftColumn;
     }
 
