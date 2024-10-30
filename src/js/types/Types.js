@@ -156,6 +156,13 @@ export const DayOfWeek = {
  * @property {Function} fnOnCancel - Cancel handler
  */
 
+/**
+ * Represents the application's state
+ * @typedef {Object} AppState
+ * @property {User[]} arUsers - Array of all users
+ * @property {string|null} sCurrentUserId - ID of currently selected user
+ * @property {TimeTrackingState|null} obTrackingState - Current tracking state
+ */
 
 // Export type definitions for use in other files
 export {};
