@@ -14,36 +14,42 @@ export class HomePage extends BasePage {
     /**
      * @override
      */
-    render() {
-        const elContainer = document.createElement('div');
-        elContainer.className = 'container mx-auto p-8';
+    async render() {
+        try {
+            await this.initialize();
 
-        // Title
-        const elTitle = document.createElement('h1');
-        elTitle.className = 'text-4xl font-bold text-center mb-12';
-        elTitle.textContent = 'TimeBank Kids';
-        elContainer.appendChild(elTitle);
+            const elContainer = document.createElement('div');
+            elContainer.className = 'container mx-auto p-8';
 
-        // Wallets container
-        const elWalletsContainer = document.createElement('div');
-        elWalletsContainer.className = 'flex flex-wrap justify-center gap-8';
+            // Title
+            const elTitle = document.createElement('h1');
+            elTitle.className = 'text-4xl font-bold text-center mb-12';
+            elTitle.textContent = 'TimeBank Kids';
+            elContainer.appendChild(elTitle);
 
-        // Add user wallets
-        const arUsers = stateManager.getUsers();
-        arUsers.forEach(obUser => {
-            const obWalletButton = new WalletButton(obUser, (sUserId) => {
-                window.location.href = `${Constants.ROUTES.CHILDREN_WALLET}/${sUserId}`;
+            // Wallets container
+            const elWalletsContainer = document.createElement('div');
+            elWalletsContainer.className = 'flex flex-wrap justify-center gap-8';
+
+            // Add user wallets
+            const arUsers = stateManager.getUsers();
+            arUsers.forEach(obUser => {
+                const obWalletButton = new WalletButton(obUser, (sUserId) => {
+                    window.location.href = `${Constants.ROUTES.CHILDREN_WALLET}/${sUserId}`;
+                });
+                elWalletsContainer.appendChild(obWalletButton.element);
             });
-            elWalletsContainer.appendChild(obWalletButton.element);
-        });
 
-        // Add the "+" button
-        const obAddButton = new AddWalletButton(() => {
-            window.location.href = Constants.ROUTES.CHILDREN;
-        });
-        elWalletsContainer.appendChild(obAddButton.element);
+            // Add the "+" button
+            const obAddButton = new AddWalletButton(() => {
+                window.location.href = Constants.ROUTES.CHILDREN;
+            });
+            elWalletsContainer.appendChild(obAddButton.element);
 
-        elContainer.appendChild(elWalletsContainer);
-        document.body.appendChild(elContainer);
+            elContainer.appendChild(elWalletsContainer);
+            document.getElementById('content').appendChild(elContainer);
+        } catch (error) {
+            console.error('Error rendering HomePage:', error);
+        }
     }
 }

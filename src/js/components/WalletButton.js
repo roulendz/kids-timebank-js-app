@@ -37,7 +37,7 @@ export class WalletButton {
 
         const elTitle = document.createElement('div');
         elTitle.className = 'text-2xl font-bold mb-2';
-        elTitle.textContent = 'My Time Wallet';
+        elTitle.textContent = this.obUser.sName;
 
         const elName = document.createElement('div');
         elName.className = 'text-xl';

@@ -5,6 +5,7 @@
 
 import { WalletType, DepositStatus } from '../types/Types.js';
 import { TimeCalculationService } from './TimeCalculationService.js';
+import { generateId } from '../utils/IdUtils.js';
 
 /**
  * @typedef {import('../types/Types').TimeDeposit} TimeDeposit

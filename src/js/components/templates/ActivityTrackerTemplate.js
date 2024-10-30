@@ -1,9 +1,3 @@
-/**
- * @file /src/js/components/templates/ActivityTrackerTemplate.js
- * @typedef {import('../../types/Types').ActivityTrackerConfig} ActivityTrackerConfig
- * Defines the layout template for the activity tracking page
- */
-
 export class ActivityTrackerTemplate {
     /**
      * Creates the activity tracker page layout
@@ -11,7 +5,7 @@ export class ActivityTrackerTemplate {
      */
     createLayout() {
         const container = document.createElement('div');
-        container.className = 'grid grid-cols-2 grid-rows-2 gap-4 h-screen p-4';
+        container.className = 'grid grid-cols-2 grid-rows-2 gap-4 h-screen p-4 overflow-hidden';
 
         // Left column content - Today's Activity Tracking
         const leftColumn = this._createLeftColumn();
@@ -31,11 +25,11 @@ export class ActivityTrackerTemplate {
      */
     _createLeftColumn() {
         const leftColumn = document.createElement('div');
-        leftColumn.className = 'col-span-1 row-span-2 flex flex-col gap-4';
+        leftColumn.className = 'col-span-1 row-span-2 flex flex-col gap-4 h-full';
 
         // Activity Tracker Section
         const trackerSection = document.createElement('div');
-        trackerSection.className = 'flex-1 bg-white rounded-lg shadow-lg p-6';
+        trackerSection.className = 'flex-1 bg-white rounded-lg shadow-lg p-6 h-1/2';
         trackerSection.innerHTML = `
             <div id="activityTracker" class="h-full flex flex-col">
                 <div id="startButtonContainer" class="flex-1 flex items-center justify-center">
@@ -64,10 +58,15 @@ export class ActivityTrackerTemplate {
 
         // Add Today's Activities List Section
         const activitiesSection = document.createElement('div');
-        activitiesSection.className = 'flex-1 bg-white rounded-lg shadow-lg p-6';
+        activitiesSection.className = 'flex-1 bg-white rounded-lg shadow-lg p-6 h-1/2';
         activitiesSection.innerHTML = `
-            <h2 class="text-xl font-bold mb-4">Today's Activities</h2>
-            <div id="activitiesList" class="space-y-2"></div>
+            <div class="flex justify-between items-center mb-4">
+                <h2 class="text-xl font-bold">Today's Activities</h2>
+                <divclass="text-2xl font-bold"></div>
+            </div>
+            <div id="activitiesList" class="h-[calc(100%-3rem)] overflow-y-auto">
+                <!-- Today's wallet content will be inserted here -->
+            </div>
         `;
 
         leftColumn.appendChild(trackerSection);
@@ -83,11 +82,11 @@ export class ActivityTrackerTemplate {
      */
     _createRightColumn() {
         const rightColumn = document.createElement('div');
-        rightColumn.className = 'col-span-1 row-span-2 flex flex-col gap-4';
+        rightColumn.className = 'col-span-1 row-span-2 flex flex-col gap-4 h-full';
 
         // Today's Wallet Section
         const todayWallet = document.createElement('div');
-        todayWallet.className = 'flex-1 bg-white rounded-lg shadow-lg p-6';
+        todayWallet.className = 'flex-1 bg-white rounded-lg shadow-lg p-6 h-1/2';
         todayWallet.innerHTML = `
             <div class="flex justify-between items-center mb-4">
                 <h2 class="text-xl font-bold">Today's Wallet</h2>
@@ -100,7 +99,7 @@ export class ActivityTrackerTemplate {
 
         // Holiday Wallet Section
         const holidayWallet = document.createElement('div');
-        holidayWallet.className = 'flex-1 bg-white rounded-lg shadow-lg p-6';
+        holidayWallet.className = 'flex-1 bg-white rounded-lg shadow-lg p-6 h-1/2';
         holidayWallet.innerHTML = `
             <div class="flex justify-between items-center mb-4">
                 <h2 class="text-xl font-bold">Holiday Wallet</h2>

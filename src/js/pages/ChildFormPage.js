@@ -1,4 +1,5 @@
 /**
+ * @file src/js/pages/ChildFormPage.js
  * @typedef {import('../types/Types').User} User
  * @typedef {import('../types/Types').Schedule} Schedule
  */
@@ -24,26 +25,45 @@ export class ChildFormPage extends BasePage {
     }
 
     /**
+     * Initializes the ChildFormPage
+     * @override
+     * @returns {Promise<void>}
+     */
+    async initialize() {
+        await super.initialize();
+    }
+
+    /**
      * Renders the child form page content
      * @override
-     * @returns {void}
+     * @returns {Promise<void>}
      */
-    render() {
-        const elContainer = document.createElement('div');
-        elContainer.className = 'container mx-auto p-8';
+    async render() {
+        try {
+            // Clear existing content
+            this.clearContent();
 
-        // Header with back button and title
-        const elHeader = this.createHeader();
-        elContainer.appendChild(elHeader);
+            const elContainer = document.createElement('div');
+            elContainer.className = 'container mx-auto p-8';
 
-        // Add user form
-        const obChildForm = new ChildForm(
-            this.handleFormSubmit.bind(this),
-            this.obUser
-        );
+            // Header with back button and title
+            const elHeader = this.createHeader();
+            elContainer.appendChild(elHeader);
 
-        elContainer.appendChild(obChildForm.element);
-        document.body.appendChild(elContainer);
+            // Add user form
+            const obChildForm = new ChildForm(
+                this.handleFormSubmit.bind(this),
+                this.obUser
+            );
+
+            elContainer.appendChild(obChildForm.element);
+
+            // Append the container to the content element
+            const contentElement = document.getElementById('content');
+            contentElement.appendChild(elContainer);
+        } catch (error) {
+            console.error('Error rendering ChildFormPage:', error);
+        }
     }
 
     /**

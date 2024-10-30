@@ -1,4 +1,5 @@
 /**
+ * @file src/js/pages/ChildrenListPage.js
  * @typedef {import('../types/Types').User} User
  */
 
@@ -13,31 +14,45 @@ import { stateManager } from '../services/StateManager.js';
  */
 export class ChildrenListPage extends BasePage {
     /**
-     * Renders the children list page content
-     * First clears the existing content, then renders new content
+     * Initializes the ChildrenListPage
      * @override
-     * @returns {void}
+     * @returns {Promise<void>}
      */
-    render() {
-        // Clear existing content
-        document.body.innerHTML = '';
+    async initialize() {
+        await super.initialize();
+    }
 
-        const elContainer = document.createElement('div');
-        elContainer.className = 'container mx-auto p-8';
+    /**
+     * Renders the children list page content
+     * @override
+     * @returns {Promise<void>}
+     */
+    async render() {
+        try {
+            // Clear existing content
+            this.clearContent();
 
-        // Header with back button
-        const elHeader = this.createHeader();
-        elContainer.appendChild(elHeader);
+            const elContainer = document.createElement('div');
+            elContainer.className = 'container mx-auto p-8';
 
-        // Add button
-        const elAddButton = this.createAddButton();
-        elContainer.appendChild(elAddButton);
+            // Header with back button
+            const elHeader = this.createHeader();
+            elContainer.appendChild(elHeader);
 
-        // Children list
-        const elListContainer = this.createChildrenList();
-        elContainer.appendChild(elListContainer);
+            // Add button
+            const elAddButton = this.createAddButton();
+            elContainer.appendChild(elAddButton);
 
-        document.body.appendChild(elContainer);
+            // Children list
+            const elListContainer = await this.createChildrenList();
+            elContainer.appendChild(elListContainer);
+
+            // Append the container to the content element
+            const contentElement = document.getElementById('content');
+            contentElement.appendChild(elContainer);
+        } catch (error) {
+            console.error('Error rendering ChildrenListPage:', error);
+        }
     }
 
     /**

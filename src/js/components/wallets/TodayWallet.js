@@ -4,11 +4,9 @@
  */
 
 // Import types and enums - make sure paths match your project structure
-import { 
-    WalletType, 
-    DepositStatus 
-} from '../../types/Types.js';
+import { WalletType, DepositStatus } from '../../types/Types.js';
 import { generateId } from '../../utils/IdUtils.js';
+import { WalletCalculationService } from '../../services/WalletCalculationService.js';
 
 // Use JSDoc imports for complex types
 /** @typedef {import('../../types/Types.js').TimeTrackingState} TimeTrackingState */
@@ -36,6 +34,7 @@ export class TodayWallet {
         this.stateManager = stateManager;
         this.timeCalculationService = timeCalculationService;
         this.modalManager = modalManager;
+        this.walletCalculationService = new WalletCalculationService();
 
         // Initialize state and bind events as necessary
         this.trackingState = {
@@ -47,7 +46,9 @@ export class TodayWallet {
         this.timerInterval = null;
         this.initializeElements();
         this.bindEvents();
+        this.loadTrackingState();
         this.updateActivitiesList();
+        this.updateWalletDisplay();
     }
 
     /**
@@ -61,6 +62,8 @@ export class TodayWallet {
         this.startButtonContainer = document.getElementById('startButtonContainer');
         this.timerContainer = document.getElementById('timerContainer');
         this.activitiesList = document.getElementById('activitiesList');
+        this.todayTotal = document.getElementById('todayTotal');
+        this.todayWalletContent = document.getElementById('todayWalletContent');
     }
 
     /**
@@ -70,13 +73,133 @@ export class TodayWallet {
     bindEvents() {
         this.startButton.addEventListener('click', () => this.startTracking());
         this.stopButton.addEventListener('click', () => this.stopTracking());
+
+        // Listen for page unload to save state
+        window.addEventListener('beforeunload', () => this.saveTrackingState());
+
+        if (this.todayWalletContent) {
+            this.todayWalletContent.addEventListener('click', (e) => {
+                const transferButton = e.target.closest('[data-action="transfer-to-holiday"]');
+                if (transferButton) {
+                    const depositId = transferButton.dataset.depositId;
+                    this.handleHolidayTransfer(depositId);
+                }
+            });
+        }
+    }
+
+    /**
+     * Load tracking state from storage
+     * @private
+     */
+    async loadTrackingState() {
+        try {
+            const savedState = await this.stateManager.getTrackingState();
+            if (savedState && savedState.bIsTracking) {
+                this.trackingState = savedState;
+                this.resumeTracking();
+            }
+        } catch (error) {
+            console.error('Error loading tracking state:', error);
+        }
+    }
+
+    /**
+     * Save tracking state to storage
+     * @private
+     */
+    async saveTrackingState() {
+        try {
+            await this.stateManager.saveTrackingState(this.trackingState);
+        } catch (error) {
+            console.error('Error saving tracking state:', error);
+        }
+    }
+
+    /**
+     * Resume tracking from saved state
+     * @private
+     */
+    resumeTracking() {
+        if (this.trackingState.bIsTracking && this.trackingState.nStartTime) {
+            // Update UI
+            this.startButtonContainer.classList.add('hidden');
+            this.timerContainer.classList.remove('hidden');
+            
+            // Resume timer
+            this.updateTimer();
+            this.timerInterval = setInterval(() => this.updateTimer(), 1000);
+        }
+    }
+
+    /**
+     * Update wallet display with current totals and deposits
+     * @private
+     */
+    async updateWalletDisplay() {
+        const userId = this.stateManager.getCurrentUserId();
+        const [deposits, activities] = await Promise.all([
+            this.stateManager.getDeposits(userId),
+            this.stateManager.getActivities(userId)
+        ]);
+
+        // Update total available time
+        const totalAvailable = this.walletCalculationService.calculateTodayWalletBalance(deposits);
+        if (this.todayTotal) {
+            this.todayTotal.textContent = DateTimeUtils.formatDuration(totalAvailable);
+        }
+
+        // Get and display today's deposits
+        if (this.todayWalletContent) {
+            const todayDeposits = this.walletCalculationService.getTodayDeposits(deposits, activities);
+            this.todayWalletContent.innerHTML = this.createWalletContent(todayDeposits);
+        }
+    }
+
+     /**
+     * Create HTML content for wallet deposits
+     * @param {Array<{deposit: TimeDeposit, activity: Activity}>} deposits
+     * @returns {string}
+     * @private
+     */
+    createWalletContent(deposits) {
+        if (deposits.length === 0) {
+            return '<div class="text-center text-gray-500 py-4">No deposits yet today</div>';
+        }
+
+        return deposits.map(({ deposit, activity }) => `
+            <div class="flex items-center justify-between p-3 border-b" data-deposit-id="${deposit.sId}">
+                <div class="flex-1">
+                    <div class="font-medium">${activity?.sDescription || 'Unknown activity'}</div>
+                    <div class="text-sm text-gray-500">
+                        ${new Date(deposit.nDepositTimestamp).toLocaleTimeString()}
+                    </div>
+                </div>
+                <div class="flex items-center gap-4">
+                    <div class="text-right">
+                        <div class="font-medium">${DateTimeUtils.formatDuration(deposit.nDepositedTime)}</div>
+                        ${deposit.nBonusTime > 0 ? 
+                            `<div class="text-sm text-green-600">+${DateTimeUtils.formatDuration(deposit.nBonusTime)} bonus</div>` : 
+                            ''}
+                    </div>
+                    ${this.walletCalculationService.canTransferToHoliday(deposit) ? `
+                        <button 
+                            class="p-2 rounded bg-blue-100 text-blue-600" 
+                            data-action="transfer-to-holiday"
+                            data-deposit-id="${deposit.sId}">
+                            🏦
+                        </button>
+                    ` : ''}
+                </div>
+            </div>
+        `).join('');
     }
 
     /**
      * Start activity tracking
      * @private
      */
-    startTracking() {
+    async startTracking() {
         this.trackingState.bIsTracking = true;
         this.trackingState.nStartTime = Date.now();
         
@@ -86,6 +209,9 @@ export class TodayWallet {
         
         // Start timer
         this.timerInterval = setInterval(() => this.updateTimer(), 1000);
+
+        // Save state immediately
+        await this.saveTrackingState();
     }
 
     /**
@@ -134,12 +260,46 @@ export class TodayWallet {
         this.trackingState.nStartTime = null;
         this.trackingState.sCurrentActivityDescription = '';
 
+        // Save cleared state
+        await this.saveTrackingState();
+
         // Update UI
         this.timerContainer.classList.add('hidden');
         this.startButtonContainer.classList.remove('hidden');
         this.updateActivitiesList();
+        await this.updateWalletDisplay();
     }
 
+     /**
+     * Handle transfer to holiday wallet
+     * @param {string} depositId
+     * @private
+     */
+    async handleHolidayTransfer(depositId) {
+        const deposits = await this.stateManager.getDeposits(this.stateManager.getCurrentUserId());
+        const deposit = deposits.find(d => d.sId === depositId);
+        
+        if (!deposit || !this.walletCalculationService.canTransferToHoliday(deposit)) {
+            return;
+        }
+
+        // Get user settings for bonus calculation
+        const userSettings = await this.stateManager.getUserSettings(deposit.sUserId);
+        const holidayDeposit = this.walletCalculationService.prepareHolidayTransfer(
+            deposit, 
+            userSettings.nHolidayBonusPercentage
+        );
+
+        // Update original deposit status and add new holiday deposit
+        await this.stateManager.updateDeposit({
+            ...deposit,
+            sStatus: DepositStatus.HOLIDAY_DEPOSITED
+        });
+        await this.stateManager.addDeposit(holidayDeposit);
+
+        // Update display
+        await this.updateWalletDisplay();
+    }
 
     /**
      * Update timer display
