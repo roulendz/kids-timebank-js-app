@@ -1,3 +1,8 @@
+/**
+ * @file src/js/pages/BasePage.js
+ * Base page class for common functionality
+ */
+
 import { Constants } from '../utils/Constants.js';
 
 /**
@@ -9,24 +14,30 @@ export class BasePage {
      * Creates a new page instance
      */
     constructor() {
-        this.initialize();
+        // Flag to track initialization
+        this._isInitialized = false;
     }
 
     /**
      * Initializes the page
      * Sets up the page environment and calls render
      * @protected
-     * @returns {void}
+     * @returns {Promise<void>}
      */
-    initialize() {
+    async initialize() {
+        if (this._isInitialized) {
+            console.log('Page already initialized');
+            return;
+        }
+
         // Clear existing content
         this.clearContent();
         
         // Set background color
         document.body.style.backgroundColor = Constants.COLORS.BACKGROUND;
-        
-        // Render new content
-        this.render();
+
+        this._isInitialized = true;
+        console.log('Base page initialized');
     }
 
     /**
@@ -35,7 +46,12 @@ export class BasePage {
      * @returns {void}
      */
     clearContent() {
-        document.body.innerHTML = '';
+        const content = document.getElementById('content');
+        if (content) {
+            content.innerHTML = '';
+        } else {
+            console.warn('Content element not found');
+        }
     }
 
     /**
@@ -43,20 +59,20 @@ export class BasePage {
      * Must be implemented by child classes
      * @abstract
      * @protected
-     * @returns {void}
+     * @returns {Promise<void>}
      * @throws {Error} If not implemented by child class
      */
-    render() {
+    async render() {
         throw new Error('render() must be implemented');
     }
 
     /**
      * Refreshes the page content
-     * Clears existing content and re-renders
+     * Re-renders without full initialization
      * @protected
-     * @returns {void}
+     * @returns {Promise<void>}
      */
-    refresh() {
-        this.initialize();
+    async refresh() {
+        await this.render();
     }
 }
