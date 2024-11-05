@@ -91,12 +91,13 @@ export class ActivityTrackerTemplate {
 
         // Today's Wallet Section
         const todayWallet = document.createElement('div');
+        todayWallet.id = 'todayWalletPanel';
         todayWallet.className = 'flex-1 bg-white rounded-lg shadow-lg p-6 h-1/2';
         todayWallet.innerHTML = `
         <div id="timeUsageTracker" class="h-full flex flex-col">
             <div class="flex justify-between items-center mb-4">
                 <h2 class="text-xl font-bold">Today's Wallet</h2>
-                <div id="todayTotal" class="text-2xl font-bold">00:00:00</div>
+                <div id="todayTotalTimeLeft" class="text-2xl font-bold">00:00:00</div>
             </div>
             <div id="startUsageContainer" class="flex-1 flex items-center justify-center">
                 <button 
