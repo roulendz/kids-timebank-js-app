@@ -18,6 +18,57 @@ export class WalletCalculationService {
     }
 
     /**
+     * Calculate total available time from today's activities
+     * @param {Activity[]} arActivities - Array of all activities
+     * @returns {number} Total available time in milliseconds
+     */
+    calculateTotalAvailableTime(arActivities) {
+        const todayStart = new Date().setHours(0, 0, 0, 0);
+        
+        return arActivities
+            .filter(activity => 
+                activity.nStartTime >= todayStart && 
+                activity.bIsAvailableForDeposit
+            )
+            .reduce((total, activity) => 
+                total + (activity.nDuration - activity.nUsedDuration), 0);
+    }
+
+    /**
+     * Get today's activities with their usage status
+     * @param {Activity[]} arActivities - Array of all activities
+     * @returns {Activity[]} Today's activities
+     */
+    getTodayActivities(arActivities) {
+        const todayStart = new Date().setHours(0, 0, 0, 0);
+        
+        return arActivities
+            .filter(activity => activity.nStartTime >= todayStart)
+            .sort((a, b) => b.nStartTime - a.nStartTime);
+    }
+
+    /**
+     * Find next available activity for time usage
+     * @param {Activity[]} arActivities - Array of activities
+     * @returns {Activity|null} Next available activity or null if none found
+     */
+    findNextAvailableActivity(arActivities) {
+        return arActivities.find(activity => 
+            activity.bIsAvailableForDeposit && 
+            activity.nUsedDuration < activity.nDuration
+        ) || null;
+    }
+
+    /**
+     * Calculate remaining time for an activity
+     * @param {Activity} activity - Activity to check
+     * @returns {number} Remaining time in milliseconds
+     */
+    calculateRemainingTime(activity) {
+        return Math.max(0, activity.nDuration - activity.nUsedDuration);
+    }
+    
+    /**
      * Calculate total available time in today's wallet
      * @param {TimeDeposit[]} deposits - Array of all deposits
      * @returns {number} Total available time in milliseconds
