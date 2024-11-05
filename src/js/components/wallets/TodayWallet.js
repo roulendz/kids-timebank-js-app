@@ -462,7 +462,6 @@ export class TodayWallet {
         this.startButtonContainer.classList.remove('hidden');
         this.updateActivitiesList();
         await this.updateWalletDisplay();
-        this.timerElement.textContent = DateTimeUtils.formatDuration(0);
     }
 
      /**
