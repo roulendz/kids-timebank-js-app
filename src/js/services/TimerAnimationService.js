@@ -98,4 +98,74 @@ export class TimerAnimationService {
             }, 300); // Match the CSS transition duration
         }
     }
+    
+    /**
+     * Animate time value from total to usage timer
+     * @param {HTMLElement} fromElement - Element to animate from
+     * @param {HTMLElement} toElement - Element to animate to
+     * @param {string} timeValue - Time value to display
+     * @returns {Promise<void>}
+     */
+    async animateTimeToUsage(fromElement, toElement, timeValue) {
+        const floatingTime = document.createElement('div');
+        floatingTime.className = 'text-2xl font-bold fixed transition-all duration-1000';
+        floatingTime.textContent = timeValue;
+        
+        const fromRect = fromElement.getBoundingClientRect();
+        const toRect = toElement.getBoundingClientRect();
+        
+        // Position at start
+        floatingTime.style.left = `${fromRect.left}px`;
+        floatingTime.style.top = `${fromRect.top}px`;
+        
+        document.body.appendChild(floatingTime);
+
+        // Start animation
+        await new Promise(resolve => setTimeout(resolve, 50));
+        
+        floatingTime.style.left = `${toRect.left}px`;
+        floatingTime.style.top = `${toRect.top}px`;
+        floatingTime.style.transform = 'scale(2)'; // Scale up for the larger timer
+        
+        // Remove after animation
+        setTimeout(() => {
+            floatingTime.remove();
+            toElement.textContent = timeValue;
+        }, 1000);
+    }
+
+    /**
+     * Animate time value from usage timer back to total
+     * @param {HTMLElement} fromElement - Element to animate from
+     * @param {HTMLElement} toElement - Element to animate to
+     * @param {string} timeValue - Time value to display
+     * @returns {Promise<void>}
+     */
+    async animateTimeToTotal(fromElement, toElement, timeValue) {
+        const floatingTime = document.createElement('div');
+        floatingTime.className = 'text-6xl font-bold fixed transition-all duration-1000';
+        floatingTime.textContent = timeValue;
+        
+        const fromRect = fromElement.getBoundingClientRect();
+        const toRect = toElement.getBoundingClientRect();
+        
+        // Position at start
+        floatingTime.style.left = `${fromRect.left}px`;
+        floatingTime.style.top = `${fromRect.top}px`;
+        
+        document.body.appendChild(floatingTime);
+
+        // Start animation
+        await new Promise(resolve => setTimeout(resolve, 50));
+        
+        floatingTime.style.left = `${toRect.left}px`;
+        floatingTime.style.top = `${toRect.top}px`;
+        floatingTime.style.transform = 'scale(0.5)'; // Scale down for the smaller total
+        
+        // Remove after animation
+        setTimeout(() => {
+            floatingTime.remove();
+            toElement.textContent = timeValue;
+        }, 1000);
+    }
 }
