@@ -23,15 +23,31 @@ export class WalletCalculationService {
      * @returns {number} Total available time in milliseconds
      */
     calculateTotalAvailableTime(arActivities) {
-        const todayStart = new Date().setHours(0, 0, 0, 0);
+        if (!Array.isArray(arActivities)) {
+            console.warn('Activities is not an array:', arActivities);
+            return 0;
+        }
+
+        console.log('Calculating total for activities:', arActivities);
+
+        const todayStart = new Date();
+        todayStart.setHours(0, 0, 0, 0);
         
-        return arActivities
+        const total = arActivities
             .filter(activity => 
-                activity.nStartTime >= todayStart && 
-                activity.bIsAvailableForDeposit
+                activity.nStartTime >= todayStart.getTime() && 
+                activity.bIsAvailableForDeposit &&
+                !isNaN(activity.nDuration) && 
+                !isNaN(activity.nUsedDuration)
             )
-            .reduce((total, activity) => 
-                total + (activity.nDuration - activity.nUsedDuration), 0);
+            .reduce((total, activity) => {
+                const availableTime = activity.nDuration - (activity.nUsedDuration || 0);
+                console.log(`Activity ${activity.sId}: Duration=${activity.nDuration}, Used=${activity.nUsedDuration}, Available=${availableTime}`);
+                return total + availableTime;
+            }, 0);
+
+        console.log('Total available time (ms):', total);
+        return total;
     }
 
     /**
