@@ -1,5 +1,6 @@
 export class ActivityTrackerTemplate {
     /**
+     * @file src/js/components/templates/ActivityTrackerTemplate.js
      * Creates the activity tracker page layout
      * @returns {HTMLElement} The main container element
      */
@@ -32,6 +33,10 @@ export class ActivityTrackerTemplate {
         trackerSection.className = 'flex-1 bg-white rounded-lg shadow-lg p-6 h-1/2';
         trackerSection.innerHTML = `
             <div id="activityTracker" class="h-full flex flex-col">
+                <div class="flex justify-between items-center mb-4">
+                    <h2 class="text-xl font-bold">Start Activity</h2>
+                    <div id="todayActivitiesTotal" class="text-2xl font-bold">00:00:00</div>
+                </div>
                 <div id="startButtonContainer" class="flex-1 flex items-center justify-center">
                     <button 
                         data-action="start-tracking" 
@@ -88,14 +93,34 @@ export class ActivityTrackerTemplate {
         const todayWallet = document.createElement('div');
         todayWallet.className = 'flex-1 bg-white rounded-lg shadow-lg p-6 h-1/2';
         todayWallet.innerHTML = `
+        <div id="timeUsageTracker" class="h-full flex flex-col">
             <div class="flex justify-between items-center mb-4">
                 <h2 class="text-xl font-bold">Today's Wallet</h2>
                 <div id="todayTotal" class="text-2xl font-bold">00:00:00</div>
             </div>
-            <div id="todayWalletContent" class="h-[calc(100%-3rem)] overflow-y-auto">
-                <!-- Today's wallet content will be inserted here -->
+            <div id="startUsageContainer" class="flex-1 flex items-center justify-center">
+                <button 
+                    data-action="start-usage" 
+                    id="startTimeUsage"
+                    class="w-64 h-64 bg-yellow-200 hover:bg-yellow-300 text-gray-800 rounded-3xl shadow-lg transform transition-all duration-300 flex flex-col items-center justify-center">
+                    <span class="text-4xl font-bold mb-2">USE</span>
+                    <span class="text-sm">MY TIME</span>
+                </button>
             </div>
-        `;
+            <div id="usageTimerContainer" class="hidden h-full">
+                <div class="h-full flex flex-col items-center justify-center">
+                    <div id="usageTimer" class="text-6xl font-bold mb-8">00:00:00</div>
+                    <button 
+                        data-action="stop-usage"
+                        id="stopTimeUsage" 
+                        class="w-48 h-48 bg-red-200 hover:bg-red-300 text-gray-800 rounded-3xl shadow-lg flex flex-col items-center justify-center">
+                        <span class="text-2xl font-bold mb-2">STOP</span>
+                        <span class="text-sm text-center">USING TIME</span>
+                    </button>
+                </div>
+            </div>
+        </div>
+        `;        
 
         // Holiday Wallet Section
         const holidayWallet = document.createElement('div');
