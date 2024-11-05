@@ -252,7 +252,7 @@ export class TodayWallet {
 
         // Save records
         await this.stateManager.addActivity(activity);
-        await this.stateManager.addDeposit(deposit);
+        // await this.stateManager.addDeposit(deposit);
 
         // Reset tracking state
         clearInterval(this.timerInterval);
@@ -268,6 +268,7 @@ export class TodayWallet {
         this.startButtonContainer.classList.remove('hidden');
         this.updateActivitiesList();
         await this.updateWalletDisplay();
+        this.timerElement.textContent = DateTimeUtils.formatDuration(0);
     }
 
      /**
