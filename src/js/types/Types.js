@@ -15,8 +15,11 @@
  * @property {string} sDescription - Description of the activity
  * @property {number} nStartTime - Timestamp when activity started
  * @property {number} nEndTime - Timestamp when activity ended
- * @property {number} nDuration - Duration in seconds
+ * @property {number} nDuration - Duration in milliseconds
  * @property {string} sUserId - ID of user who performed the activity
+ * @property {number} nUsedDuration - Duration of time used from this activity (default: 0)
+ * @property {boolean} bIsAvailableForDeposit - Whether activity can be deposited (default: true)
+ * @property {boolean} bIsUsed - Whether activity time is fully used (default: false)
  */
 
 /**
