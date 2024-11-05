@@ -92,6 +92,22 @@ export class StateManager {
     }
 
     /**
+     * Update an existing activity
+     * @param {Activity} activity - Updated activity data
+     * @returns {Promise<void>}
+     */
+    async updateActivity(activity) {
+        const user = this.getUser(activity.sUserId);
+        if (user) {
+            const index = user.arActivityLog.findIndex(a => a.sId === activity.sId);
+            if (index !== -1) {
+                user.arActivityLog[index] = activity;
+                this.saveState();
+            }
+        }
+    }
+
+    /**
      * Add a new deposit for the current user
      * @param {TimeDeposit} deposit - Deposit data to add
      */
