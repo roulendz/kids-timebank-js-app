@@ -1,22 +1,172 @@
+/**
+ * @file src/js/components/templates/ActivityTrackerTemplate.js
+ * @typedef {import('../../types/Types').TimeTrackingState} TimeTrackingState
+ * Creates the activity tracker page layout
+ * @returns {HTMLElement} The main container element
+ */
+
+import { DateTimeUtils } from '../../utils/DateTimeUtils.js';
+import { TimerAnimationService } from '../../services/TimerAnimationService.js';
+import { WalletCalculationService } from '../../services/WalletCalculationService.js';
+import { TimeTrackingService } from '../../services/TimeTrackingService.js';
+import { stateManager } from '../../services/StateManager.js';
+
 export class ActivityTrackerTemplate {
+
+    constructor(sUserId) {
+        this.timerAnimationService = new TimerAnimationService();
+        this.walletCalculationService = new WalletCalculationService();
+        this.timeTrackingService = new TimeTrackingService(sUserId);
+        this.timerInterval = null;
+        this.sUserId = sUserId; // Add this line
+    }
+
     /**
-     * @file src/js/components/templates/ActivityTrackerTemplate.js
      * Creates the activity tracker page layout
+     * @param {Array} activities - Array of today's activities
      * @returns {HTMLElement} The main container element
      */
-    createLayout() {
+    createLayout(activities = []) {
         const container = document.createElement('div');
         container.className = 'grid grid-cols-2 grid-rows-2 gap-4 h-screen p-4 overflow-hidden';
-
-        // Left column content - Today's Activity Tracking
+    
         const leftColumn = this._createLeftColumn();
-        container.appendChild(leftColumn);
-
-        // Right column content - Wallets Overview
         const rightColumn = this._createRightColumn();
+    
+        container.appendChild(leftColumn);
         container.appendChild(rightColumn);
-
+    
+        // Initialize after DOM elements are added
+        requestAnimationFrame(() => {
+            this._initializeTimerUpdates(activities);
+            this._updateTotalAvailableTime(activities);
+        });
+    
         return container;
+    }
+
+    /**
+     * Initialize timer update intervals and event listeners
+     * @private
+     */
+    _initializeTimerUpdates(activities = []) {
+        // Clear any existing interval
+        if (this.timerInterval) {
+            clearInterval(this.timerInterval);
+        }
+
+        // Calculate and display initial total
+        this._updateTotalAvailableTime(activities);
+
+        const startBtn = document.getElementById('startTracking');
+        const stopBtn = document.getElementById('stopTracking');
+        
+        if (startBtn) {
+            startBtn.addEventListener('click', () => {
+                this.timeTrackingService.startTracking();
+                this._startTimerUpdates();
+                this._toggleTimerVisibility(true);
+            });
+        }
+
+        if (stopBtn) {
+            stopBtn.addEventListener('click', async () => {
+                this._stopTimerUpdates();
+                await this._handleStopTracking();
+            });
+        }
+    }
+
+    /**
+     * Updates the total available time display
+     * @param {Array} activities - Array of today's activities
+     * @private
+     */
+    _updateTotalAvailableTime(activities = []) {
+        const totalTimeElement = document.getElementById('todayTotalTimeLeft');
+        if (!totalTimeElement) {
+            console.warn('todayTotalTimeLeft element not found');
+            return;
+        }
+
+        const totalAvailableMs = this.walletCalculationService.calculateTotalAvailableTime(activities);
+        console.log('Total available milliseconds to display:', totalAvailableMs);
+        
+        const formattedTime = DateTimeUtils.formatDuration(totalAvailableMs);
+        console.log('Formatted time to display:', formattedTime);
+        
+        // Update both displays
+        totalTimeElement.textContent = formattedTime;
+        
+        // Also update the activities total in the left column
+        const activitiesTotalElement = document.getElementById('todayActivitiesTotal');
+        if (activitiesTotalElement) {
+            activitiesTotalElement.textContent = formattedTime;
+        }
+
+        console.log('Updated display values:', {
+            totalTimeElement: totalTimeElement.textContent,
+            activitiesTotal: activitiesTotalElement?.textContent
+        });
+    }
+
+    /**
+     * Start timer update interval
+     * @private
+     */
+    _startTimerUpdates() {
+        const timerElement = document.getElementById('timer');
+        let startTime = Date.now();
+
+        this.timerInterval = setInterval(() => {
+            const elapsed = Date.now() - startTime;
+            const formattedTime = DateTimeUtils.formatDuration(elapsed);
+            
+            if (timerElement) {
+                timerElement.textContent = formattedTime;
+            }
+        }, 1000);
+    }
+
+    /**
+     * Stop timer updates and clear interval
+     * @private
+     * @returns {Promise<void>}
+     */
+    async _stopTimerUpdates() {
+        if (this.timerInterval) {
+            clearInterval(this.timerInterval);
+            this.timerInterval = null;
+        }
+    }
+
+    /**
+     * Handle stop tracking button click
+     * @private
+     */
+    async _handleStopTracking() {
+        const timerElement = document.getElementById('timer');
+        const finalTime = timerElement.textContent;
+
+        // Add activity to state manager
+        const newActivity = this.timeTrackingService.stopTracking('Activity');
+        await stateManager.addActivity(newActivity);
+
+        // Get updated activities
+        const activities = await stateManager.getActivities(this.sUserId);
+        const todayActivities = activities.filter(activity => {
+            const todayStart = new Date();
+            todayStart.setHours(0, 0, 0, 0);
+            return activity.nStartTime >= todayStart.getTime();
+        });
+        
+        // Update total available time
+        this._updateTotalAvailableTime(todayActivities);
+
+        // Animate timer value floating to wallet
+        await this.timerAnimationService.animateTimerToWallet();
+
+        this._toggleTimerVisibility(false);
     }
 
     /**
@@ -96,7 +246,7 @@ export class ActivityTrackerTemplate {
         todayWallet.innerHTML = `
         <div id="timeUsageTracker" class="h-full flex flex-col">
             <div class="flex justify-between items-center mb-4">
-                <h2 class="text-xl font-bold">Today's Wallet</h2>
+                <h2 class="text-xl font-bold">Today's Wallet Earned Time </h2>
                 <div id="todayTotalTimeLeft" class="text-2xl font-bold">00:00:00</div>
             </div>
             <div id="startUsageContainer" class="flex-1 flex items-center justify-center">
