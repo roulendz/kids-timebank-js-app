@@ -1,0 +1,48 @@
+/**
+ * @file src/css/animations.css
+ * Custom animations for the activity tracker
+ */
+
+ @keyframes fadeIn {
+    0% { 
+        opacity: 0; 
+        transform: scale(0.9); 
+    }
+    100% { 
+        opacity: 1; 
+        transform: scale(1); 
+    }
+}
+
+@keyframes pulse {
+    0%, 100% { 
+        opacity: 1; 
+    }
+    50% { 
+        opacity: 0.5; 
+    }
+}
+
+.animate-fade-in {
+    animation: fadeIn 0.3s ease-in-out;
+}
+
+.animate-pulse {
+    animation: pulse 1s cubic-bezier(0.4, 0, 0.6, 1);
+}
+
+.timer-float {
+    transition: all 1s ease-in-out;
+}
+
+.timer-container {
+    transition: opacity 0.3s ease-in-out;
+}
+
+.fade-out {
+    opacity: 0;
+}
+
+.fade-in {
+    opacity: 1;
+}
