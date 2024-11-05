@@ -1,4 +1,4 @@
-# Save this as 'Generate-DirectoryTree.ps1'
+# Save this as 'Get-DirectoryTree.ps1'
 
 # Define the Unicode box-drawing characters as variables
 $TEE = [char]0x251C + [char]0x2500 + [char]0x2500 + " "    # ├──
@@ -51,7 +51,7 @@ function Get-DirectoryTree {
         $_.Name -notin @(
             ".git", 
             "node_modules", 
-            "Generate-DirectoryTree.ps1"
+            "Get-DirectoryTree.ps1"
         )
     } | Sort-Object Name
 
@@ -63,7 +63,7 @@ function Get-DirectoryTree {
 
         if ($item.PSIsContainer) {
             # If it's a directory, recurse
-            Generate-DirectoryTree -Path $item.FullName -Indent $newIndent -IsLast $isLastItem -IsRoot $false -RelativePath $currentPath
+            Get-DirectoryTree -Path $item.FullName -Indent $newIndent -IsLast $isLastItem -IsRoot $false -RelativePath $currentPath
         }
         else {
             # If it's a file, print it
@@ -83,7 +83,7 @@ $script:allPaths = @()
 
 # Run the script
 $targetPath = if ($args[0]) { $args[0] } else { "." }
-Generate-DirectoryTree -Path $targetPath -IsRoot $true
+Get-DirectoryTree -Path $targetPath -IsRoot $true
 
 # Print the file paths list
 Write-Host "`nFile paths:`n"
