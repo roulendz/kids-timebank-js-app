@@ -146,8 +146,11 @@ export const DayOfWeek = {
  * Time tracking state
  * @typedef {Object} TimeTrackingState
  * @property {boolean} bIsTracking - Whether time tracking is active
+ * @property {boolean} bIsUsingTime - Whether time usage is active
  * @property {number|null} nStartTime - Tracking start timestamp
+ * @property {number|null} nUsageStartTime - Time usage start timestamp
  * @property {string} sCurrentActivityDescription - Current activity description
+ * @property {string|null} sCurrentUsageActivityId - ID of activity currently being used
  */
 
 /**
