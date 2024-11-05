@@ -28,10 +28,10 @@ export class WalletPage extends BasePage {
     async initialize() {
         const timeCalculationService = new TimeCalculationService();
         const modalManager = new ModalManager();
-    
+
         // Ensure stateManager is initialized
         await stateManager.init();
-    
+
         // Verify user exists
         const user = stateManager.getUser(this.sUserId);
         console.log("User after ensuring state load:", user);
@@ -43,11 +43,19 @@ export class WalletPage extends BasePage {
         // Set current user in the state manager
         stateManager.setCurrentUserId(this.sUserId);
 
+        // Get user's activities for today
+        const activities = await stateManager.getActivities(this.sUserId) || [];
+        const todayActivities = activities.filter(activity => {
+            const todayStart = new Date();
+            todayStart.setHours(0, 0, 0, 0);
+            return activity.nStartTime >= todayStart.getTime();
+        });
+
         // Check if the main container is already appended
         if (!document.getElementById('walletContainer')) {
-            // Create page layout
-            const template = new ActivityTrackerTemplate();
-            const mainContainer = template.createLayout();
+            // Create page layout with user ID and activities
+            const template = new ActivityTrackerTemplate(this.sUserId);
+            const mainContainer = template.createLayout(todayActivities);
             mainContainer.id = 'walletContainer';  // Add unique ID to prevent duplication
 
             document.body.appendChild(mainContainer);
