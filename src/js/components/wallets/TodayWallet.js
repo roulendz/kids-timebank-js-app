@@ -35,6 +35,11 @@ export class TodayWallet {
         this.timeCalculationService = timeCalculationService;
         this.modalManager = modalManager;
         this.walletCalculationService = new WalletCalculationService();
+        this.startTimeUsageBtn = document.getElementById('startTimeUsage');
+        this.stopTimeUsageBtn = document.getElementById('stopTimeUsage');
+        this.usageTimerElement = document.getElementById('usageTimer');
+        this.usageTimerContainer = document.getElementById('usageTimerContainer');
+        this.startUsageContainer = document.getElementById('startUsageContainer');
 
         // Initialize state and bind events as necessary
         this.trackingState = {
@@ -49,6 +54,8 @@ export class TodayWallet {
         this.loadTrackingState();
         this.updateActivitiesList();
         this.updateWalletDisplay();
+        
+        this.bindTimeUsageEvents();
     }
 
     /**
@@ -62,7 +69,7 @@ export class TodayWallet {
         this.startButtonContainer = document.getElementById('startButtonContainer');
         this.timerContainer = document.getElementById('timerContainer');
         this.activitiesList = document.getElementById('activitiesList');
-        this.todayTotal = document.getElementById('todayTotal');
+        this.todayTotalTimeLeft = document.getElementById('todayTotalTimeLeft');
         this.todayWalletContent = document.getElementById('todayWalletContent');
     }
 
@@ -105,6 +112,191 @@ export class TodayWallet {
     }
 
     /**
+     * Bind time usage events
+     * @private
+     */
+    bindTimeUsageEvents() {
+        this.startTimeUsageBtn?.addEventListener('click', () => this.startTimeUsage());
+        this.stopTimeUsageBtn?.addEventListener('click', () => this.stopTimeUsage());
+    }
+
+     /**
+     * Update button states based on tracking/usage status
+     * @private
+     */
+     updateButtonStates() {
+        const isTracking = this.trackingState.bIsTracking;
+        const isUsingTime = this.trackingState.bIsUsingTime;
+
+        // Start tracking button
+        if (this.startButton) {
+            this.startButton.disabled = isUsingTime;
+            this.startButton.classList.toggle('bg-gray-300', isUsingTime);
+            this.startButton.classList.toggle('hover:bg-gray-400', isUsingTime);
+            this.startButton.classList.toggle('bg-green-500', !isUsingTime);
+            this.startButton.classList.toggle('hover:bg-green-600', !isUsingTime);
+        }
+
+        // Start usage button
+        if (this.startTimeUsageBtn) {
+            this.startTimeUsageBtn.disabled = isTracking;
+            this.startTimeUsageBtn.classList.toggle('bg-gray-300', isTracking);
+            this.startTimeUsageBtn.classList.toggle('hover:bg-gray-400', isTracking);
+            this.startTimeUsageBtn.classList.toggle('bg-yellow-200', !isTracking);
+            this.startTimeUsageBtn.classList.toggle('hover:bg-yellow-300', !isTracking);
+        }
+    }
+
+    /**
+     * Start time usage
+     * @private
+     */
+    async startTimeUsage() {
+        const userId = this.stateManager.getCurrentUserId();
+        console.log("userId:", userId);
+        const activities = await this.stateManager.getActivities(userId);
+        console.log("activities:", activities);
+        const availableActivities = activities.filter(a => a.bIsAvailableForDeposit);
+        console.log("availableActivities:", availableActivities);
+
+        if (availableActivities.length === 0) {
+            this.modalManager.showInfo({
+                sTitle: 'No Time Available',
+                sContent: 'There is no time available to use. Please deposit some activity time first.'
+            });
+            return;
+        }
+
+        this.trackingState.bIsUsingTime = true;
+        this.trackingState.nUsageStartTime = Date.now();
+        
+        // Update UI
+        this.startUsageContainer.classList.add('hidden');
+        this.usageTimerContainer.classList.remove('hidden');
+        
+        // Start usage timer
+        this.usageTimerInterval = setInterval(() => this.updateUsageTimer(), 1000);
+
+        // Update button states
+        this.updateButtonStates();
+        
+        // Save state
+        await this.saveTrackingState();
+        
+        // Highlight current activity being used
+        this.updateActivitiesList();
+    }
+
+    
+    /**
+     * Stop time usage
+     * @private
+     */
+    async stopTimeUsage() {
+        if (!this.trackingState.bIsUsingTime) return;
+
+        const userId = this.stateManager.getCurrentUserId();
+        const activities = await this.stateManager.getActivities(userId);
+        
+        // Calculate used time
+        const usedTime = Date.now() - this.trackingState.nUsageStartTime;
+        let remainingUsageTime = usedTime;
+
+        // Update activities with used time
+        const updatedActivities = activities.map(activity => {
+            if (!activity.bIsAvailableForDeposit) return activity;
+            
+            const remainingTime = this.walletCalculationService.calculateRemainingTime(activity);
+            if (remainingUsageTime <= 0) return activity;
+
+            const timeToUse = Math.min(remainingUsageTime, remainingTime);
+            remainingUsageTime -= timeToUse;
+            
+            return {
+                ...activity,
+                nUsedDuration: (activity.nUsedDuration || 0) + timeToUse,
+                bIsAvailableForDeposit: timeToUse < remainingTime
+            };
+        });
+
+        // Update state for each modified activity
+        for (const activity of updatedActivities) {
+            await this.stateManager.updateActivity(activity);
+        }
+
+        // Reset tracking state
+        clearInterval(this.usageTimerInterval);
+        this.trackingState.bIsUsingTime = false;
+        this.trackingState.nUsageStartTime = null;
+        
+        // Update UI
+        this.usageTimerContainer.classList.add('hidden');
+        this.startUsageContainer.classList.remove('hidden');
+        this.updateButtonStates();
+        this.updateActivitiesList();
+        await this.updateWalletDisplay();
+        
+        // Save state
+        await this.saveTrackingState();
+    }
+
+    /**
+     * Update usage timer display and check limits
+     * @private
+     */
+    async updateUsageTimer() {
+        if (!this.trackingState.bIsUsingTime || !this.trackingState.nUsageStartTime) return;
+        
+        const duration = Date.now() - this.trackingState.nUsageStartTime;
+        this.usageTimerElement.textContent = DateTimeUtils.formatDuration(duration);
+
+        // Check if we've exceeded available time
+        if (await this.isTimeUsageExceeded(duration)) {
+            await this.stopTimeUsage();
+            this.addBlinkingEffect();
+            this.modalManager.showInfo({
+                sTitle: 'Time Limit Reached',
+                sContent: 'You have used all available time for today.'
+            });
+        }
+    }
+
+    /**
+     * Add blinking effect to wallet panel
+     * @private
+     */
+    addBlinkingEffect() {
+        const panel = document.getElementById('todayWalletPanel');
+        if (!panel) return;
+
+        let blinkCount = 0;
+        const blinkInterval = setInterval(() => {
+            blinkCount++;
+            panel.classList.toggle('bg-red-100');
+            
+            if (blinkCount >= 10) { // 5 complete cycles (on/off)
+                clearInterval(blinkInterval);
+                panel.classList.remove('bg-red-100');
+            }
+        }, 300); // 300ms for each state change
+    }
+
+     /**
+     * Check if time usage would exceed available time
+     * @param {number} usedTime - Time being used
+     * @returns {boolean}
+     * @private
+     */
+     async isTimeUsageExceeded(usedTime) {
+        const userId = this.stateManager.getCurrentUserId();
+        const activities = await this.stateManager.getActivities(userId);
+        const totalAvailable = this.walletCalculationService.calculateTotalAvailableTime(activities);
+        
+        return usedTime > totalAvailable;
+    }
+
+
+    /**
      * Save tracking state to storage
      * @private
      */
@@ -145,8 +337,8 @@ export class TodayWallet {
 
         // Update total available time
         const totalAvailable = this.walletCalculationService.calculateTodayWalletBalance(deposits);
-        if (this.todayTotal) {
-            this.todayTotal.textContent = DateTimeUtils.formatDuration(totalAvailable);
+        if (this.todayTotalTimeLeft) {
+            this.todayTotalTimeLeft.textContent = DateTimeUtils.formatDuration(totalAvailable);
         }
 
         // Get and display today's deposits
@@ -232,6 +424,8 @@ export class TodayWallet {
             nStartTime: this.trackingState.nStartTime,
             nEndTime: endTime,
             nDuration: duration,
+            nUsedDuration: 0,
+            bIsAvailableForDeposit: true,
             sUserId: this.stateManager.getCurrentUserId()
         };
 
@@ -335,24 +529,33 @@ export class TodayWallet {
      * @private
      */
     createActivityItem(activity) {
+        const isCurrentlyUsed = this.trackingState.bIsUsingTime && 
+                              this.trackingState.sCurrentUsageActivityId === activity.sId;
+        const isFullyUsed = !activity.bIsAvailableForDeposit;
+        
         return `
-            <div class="flex items-center justify-between p-3 border-b" data-activity-id="${activity.sId}">
+            <div class="flex items-center justify-between p-3 border-b ${isCurrentlyUsed ? 'bg-yellow-50' : ''}" 
+                 data-activity-id="${activity.sId}">
                 <div class="flex-1">
                     <input type="text" 
                            class="w-full p-2 border rounded"
                            value="${activity.sDescription}"
-                           placeholder="Enter activity description">
+                           placeholder="Enter activity description"
+                           ${isFullyUsed ? 'disabled' : ''}>
                 </div>
                 <div class="flex items-center gap-2 ml-4">
                     <span class="font-medium">${DateTimeUtils.formatDuration(activity.nDuration)}</span>
-                    <button class="deposit-holiday p-2 rounded bg-blue-100 text-blue-600">
-                        <span class="sr-only">Deposit to Holiday Wallet</span>
-                        🏦
-                    </button>
-                    <button class="info-button p-2 rounded bg-gray-100">
-                        <span class="sr-only">Information</span>
-                        ℹ️
-                    </button>
+                    ${activity.nUsedDuration > 0 ? 
+                        `<span class="text-sm text-gray-500">
+                            (${DateTimeUtils.formatDuration(activity.nUsedDuration)} used)
+                        </span>` : 
+                        ''}
+                    ${!isFullyUsed ? `
+                        <button class="deposit-holiday p-2 rounded bg-blue-100 text-blue-600">
+                            <span class="sr-only">Deposit to Holiday Wallet</span>
+                            🏦
+                        </button>
+                    ` : ''}
                 </div>
             </div>
         `;
