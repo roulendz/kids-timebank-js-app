@@ -1,8 +1,7 @@
 /**
  * @file src/js/components/templates/ActivityTrackerTemplate.js
  * @typedef {import('../../types/Types').TimeTrackingState} TimeTrackingState
- * Creates the activity tracker page layout
- * @returns {HTMLElement} The main container element
+ * @typedef {import('../../types/Types').Activity} Activity
  */
 
 import { DateTimeUtils } from '../../utils/DateTimeUtils.js';
@@ -12,240 +11,174 @@ import { TimeTrackingService } from '../../services/TimeTrackingService.js';
 import { stateManager } from '../../services/StateManager.js';
 
 export class ActivityTrackerTemplate {
-
+    /**
+     * @param {string} sUserId - User ID for tracking
+     */
     constructor(sUserId) {
+        // Services
         this.timerAnimationService = new TimerAnimationService();
         this.walletCalculationService = new WalletCalculationService();
         this.timeTrackingService = new TimeTrackingService(sUserId);
-        this.timerInterval = null;
+        
+        // State
         this.sUserId = sUserId;
+        this.timerInterval = null;
         this.usageTimerInterval = null;
-        this.remainingTime = 0;
+        
+        // DOM References
+        /** @type {Object.<string, HTMLElement>} */
+        this.domRefs = {};
+    }
+
+    /**
+     * Initialize DOM references
+     * @private
+     */
+    _initializeDomReferences() {
+        const refs = {
+            startTracking: 'startTracking',
+            stopTracking: 'stopTracking',
+            startTimeUsage: 'startTimeUsage',
+            stopTimeUsage: 'stopTimeUsage',
+            timer: 'timer',
+            usageTimer: 'usageTimer',
+            todayTotalTimeLeft: 'todayTotalTimeLeft',
+            todayActivitiesTotal: 'todayActivitiesTotal',
+            activitiesList: 'activitiesList',
+            startButtonContainer: 'startButtonContainer',
+            timerContainer: 'timerContainer',
+            startUsageContainer: 'startUsageContainer',
+            usageTimerContainer: 'usageTimerContainer'
+        };
+
+        // Initialize all references
+        for (const [key, id] of Object.entries(refs)) {
+            const element = document.getElementById(id);
+            if (element) {
+                this.domRefs[key] = element;
+            } else {
+                console.warn(`Element with id ${id} not found`);
+            }
+        }
     }
 
     /**
      * Creates the activity tracker page layout
-     * @param {Array} activities - Array of today's activities
+     * @param {Activity[]} arActivities - Array of today's activities
      * @returns {HTMLElement} The main container element
      */
-    createLayout(activities = []) {
+    createLayout(arActivities = []) {
         const container = document.createElement('div');
         container.className = 'grid grid-cols-2 grid-rows-2 gap-4 h-screen p-4 overflow-hidden';
-    
-        const leftColumn = this._createLeftColumn();
-        const rightColumn = this._createRightColumn();
-    
-        container.appendChild(leftColumn);
-        container.appendChild(rightColumn);
-    
-        // Initialize after DOM elements are added
+        
+        container.appendChild(this._createLeftColumn());
+        container.appendChild(this._createRightColumn());
+        
+        // Initialize after DOM is ready
         requestAnimationFrame(() => {
-            this._initializeTimerUpdates(activities);
-            this._updateTotalAvailableTime(activities);
+            this._initializeDomReferences();
+            this._initializeEventListeners();
+            this._updateDisplays(arActivities);
         });
-    
+        
         return container;
     }
 
     /**
-     * Initialize timer update intervals and event listeners
+     * Initialize all event listeners
      * @private
      */
-    _initializeTimerUpdates(activities = []) {
-        // Clear any existing interval
-        if (this.timerInterval) {
-            clearInterval(this.timerInterval);
+    _initializeEventListeners() {
+        // Just dispatch events for TodayWallet to handle
+        if (this.domRefs.startTracking) {
+            this.domRefs.startTracking.addEventListener('click', () => {
+                document.dispatchEvent(new CustomEvent('activityAction', { 
+                    detail: { action: 'start' }
+                }));
+            });
         }
-
-        // Calculate and display initial total
-        this._updateTotalAvailableTime(activities);
-
-        const startBtn = document.getElementById('startTracking');
-        const stopBtn = document.getElementById('stopTracking');
         
-        if (startBtn) {
-            startBtn.addEventListener('click', () => {
-                this.timeTrackingService.startTracking();
-                this._startTimerUpdates();
-                this._toggleTimerVisibility(true);
-            });
-        }
-
-        if (stopBtn) {
-            stopBtn.addEventListener('click', async () => {
-                this._stopTimerUpdates();
-                await this._handleStopTracking();
-            });
-        }
-
-        // Add usage button listeners
-        const startUsageBtn = document.getElementById('startTimeUsage');
-        const stopUsageBtn = document.getElementById('stopTimeUsage');
-        
-        if (startUsageBtn) {
-            startUsageBtn.addEventListener('click', () => {
-                this._startTimeUsage();
-            });
-        }
-
-        if (stopUsageBtn) {
-            stopUsageBtn.addEventListener('click', async () => {
-                await this._stopTimeUsage();
+        if (this.domRefs.stopTracking) {
+            this.domRefs.stopTracking.addEventListener('click', () => {
+                document.dispatchEvent(new CustomEvent('activityAction', { 
+                    detail: { action: 'stop' }
+                }));
             });
         }
     }
 
-     /**
-     * Start using time from wallet
+    /**
+     * Update all display elements
+     * @param {Activity[]} arActivities - Current activities
      * @private
      */
-     async _startTimeUsage() {
-        const totalTimeElement = document.getElementById('todayTotalTimeLeft');
-        const usageTimerElement = document.getElementById('usageTimer');
+    _updateDisplays(arActivities) {
+        const nTotalAvailable = this.walletCalculationService.calculateTotalLeftPlayTimeToday(arActivities);
+        const nTotalAccumulated = this.walletCalculationService.calculateTotalActivityAcumulatedDurationToday(arActivities);
         
-        if (!totalTimeElement || !usageTimerElement) return;
-
-        // Get the current total time in milliseconds
-        const [hours, minutes, seconds] = totalTimeElement.textContent.split(':').map(Number);
-        this.remainingTime = ((hours * 3600) + (minutes * 60) + seconds) * 1000;
-
-        // Animate the time moving down
-        await this.timerAnimationService.animateTimeToUsage(
-            totalTimeElement,
-            usageTimerElement,
-            totalTimeElement.textContent
-        );
-
-        // Start countdown
-        this._startCountdown();
-        
-        // Toggle visibility
-        this._toggleUsageVisibility(true);
+        this._updateTimerDisplay('todayTotalTimeLeft', nTotalAvailable);
+        this._updateTimerDisplay('todayActivitiesTotal', nTotalAccumulated);
     }
 
     /**
-     * Start countdown timer
+     * Update specific timer display
+     * @param {string} sRefKey - DOM reference key
+     * @param {number} nTime - Time in milliseconds
      * @private
      */
-    _startCountdown() {
-        if (this.usageTimerInterval) {
-            clearInterval(this.usageTimerInterval);
-        }
-
-        const usageTimerElement = document.getElementById('usageTimer');
-        
-        this.usageTimerInterval = setInterval(() => {
-            this.remainingTime -= 1000;
-            
-            if (this.remainingTime <= 0) {
-                clearInterval(this.usageTimerInterval);
-                this.remainingTime = 0;
-            }
-            
-            usageTimerElement.textContent = DateTimeUtils.formatDuration(this.remainingTime);
-        }, 1000);
-    }
-
-    /**
-     * Stop using time
-     * @private
-     */
-    async _stopTimeUsage() {
-        clearInterval(this.usageTimerInterval);
-        
-        const usageTimerElement = document.getElementById('usageTimer');
-        const totalTimeElement = document.getElementById('todayTotalTimeLeft');
-        
-        if (!totalTimeElement || !usageTimerElement) return;
-
-        // Animate the time moving back up
-        await this.timerAnimationService.animateTimeToTotal(
-            usageTimerElement,
-            totalTimeElement,
-            usageTimerElement.textContent
-        );
-
-        // Toggle visibility
-        this._toggleUsageVisibility(false);
-    }
-
-    /**
-     * Toggle usage timer visibility
-     * @param {boolean} show - Whether to show the usage timer
-     * @private
-     */
-    _toggleUsageVisibility(show) {
-        const startContainer = document.getElementById('startUsageContainer');
-        const timerContainer = document.getElementById('usageTimerContainer');
-        
-        if (startContainer && timerContainer) {
-            if (show) {
-                startContainer.classList.add('hidden');
-                timerContainer.classList.remove('hidden');
-            } else {
-                timerContainer.classList.add('hidden');
-                startContainer.classList.remove('hidden');
-            }
+    _updateTimerDisplay(sRefKey, nTime) {
+        if (this.domRefs[sRefKey]) {
+            this.domRefs[sRefKey].textContent = DateTimeUtils.formatDuration(nTime);
         }
     }
 
     /**
-     * Updates the total available time display
-     * @param {Array} activities - Array of today's activities
+     * Handle start time usage button click
      * @private
      */
-    _updateTotalAvailableTime(activities = []) {
-        const totalTimeElement = document.getElementById('todayTotalTimeLeft');
-        if (!totalTimeElement) {
-            console.warn('todayTotalTimeLeft element not found');
-            return;
+    async _handleStartTimeUsage() {
+        const arActivities = await stateManager.getActivities(this.sUserId);
+        const sActivityId = this.timeTrackingService.startTimeUsage(arActivities);
+        
+        if (sActivityId) {
+            this._startUsageTimer();
+            this._toggleVisibility('usage', true);
         }
-
-        const totalAvailableMs = this.walletCalculationService.calculateTotalLeftPlayTimeToday(activities);
-        const totalActivityDuration = this.walletCalculationService.calculateTotalActivityAcumulatedDurationToday(activities);
-        console.log('Total available milliseconds to display:', totalAvailableMs);
-        
-        const formattedTime = DateTimeUtils.formatDuration(totalAvailableMs);
-        const formattedActivityDuration = DateTimeUtils.formatDuration(totalActivityDuration);
-        console.log('Formatted time to display:', formattedTime);
-        
-        // Update both displays
-        totalTimeElement.textContent = formattedTime;
-        
-        // Also update the activities total in the left column
-        const activitiesTotalElement = document.getElementById('todayActivitiesTotal');
-        if (activitiesTotalElement) {
-            activitiesTotalElement.textContent = formattedActivityDuration;
-        }
-
-        console.log('Updated display values:', {
-            totalTimeElement: totalTimeElement.textContent,
-            activitiesTotal: activitiesTotalElement?.textContent
-        });
     }
 
     /**
-     * Start timer update interval
+     * Handle stop time usage button click
+     * @private
+     */
+    async _handleStopTimeUsage() {
+        const arActivities = await stateManager.getActivities(this.sUserId);
+        const arUpdatedActivities = this.timeTrackingService.stopTimeUsage(arActivities);
+        
+        await stateManager.updateActivities(arUpdatedActivities);
+        this._stopUsageTimer();
+        this._toggleVisibility('usage', false);
+        this._updateDisplays(arUpdatedActivities);
+    }
+
+    /**
+     * Start timer updates for tracking
      * @private
      */
     _startTimerUpdates() {
-        const timerElement = document.getElementById('timer');
-        let startTime = Date.now();
-
+        if (this.timerInterval) clearInterval(this.timerInterval);
+        
+        let nStartTime = Date.now();
         this.timerInterval = setInterval(() => {
-            const elapsed = Date.now() - startTime;
-            const formattedTime = DateTimeUtils.formatDuration(elapsed);
-            
-            if (timerElement) {
-                timerElement.textContent = formattedTime;
+            if (this.domRefs.timer) {
+                const nElapsed = Date.now() - nStartTime;
+                this.domRefs.timer.textContent = DateTimeUtils.formatDuration(nElapsed);
             }
         }, 1000);
     }
 
     /**
-     * Stop timer updates and clear interval
+     * Stop timer updates
      * @private
-     * @returns {Promise<void>}
      */
     async _stopTimerUpdates() {
         if (this.timerInterval) {
@@ -255,28 +188,30 @@ export class ActivityTrackerTemplate {
     }
 
     /**
-     * Handle stop tracking button click
+     * Start usage timer updates
      * @private
      */
-    async _handleStopTracking() {
-        const timerElement = document.getElementById('timer');
-        const finalTime = timerElement.textContent;
-
-        // Get updated activities
-        const activities = await stateManager.getActivities(this.sUserId);
-        const todayActivities = activities.filter(activity => {
-            const todayStart = new Date();
-            todayStart.setHours(0, 0, 0, 0);
-            return activity.nStartTime >= todayStart.getTime();
-        });
+    _startUsageTimer() {
+        if (this.usageTimerInterval) clearInterval(this.usageTimerInterval);
         
-        // Update total available time
-        this._updateTotalAvailableTime(todayActivities);
+        let nStartTime = Date.now();
+        this.usageTimerInterval = setInterval(() => {
+            if (this.domRefs.usageTimer) {
+                const nElapsed = Date.now() - nStartTime;
+                this.domRefs.usageTimer.textContent = DateTimeUtils.formatDuration(nElapsed);
+            }
+        }, 1000);
+    }
 
-        // Animate timer value floating to wallet
-        await this.timerAnimationService.animateTimerToWallet();
-
-        this._toggleTimerVisibility(false);
+    /**
+     * Stop usage timer updates
+     * @private
+     */
+    _stopUsageTimer() {
+        if (this.usageTimerInterval) {
+            clearInterval(this.usageTimerInterval);
+            this.usageTimerInterval = null;
+        }
     }
 
     /**
@@ -289,120 +224,114 @@ export class ActivityTrackerTemplate {
         leftColumn.className = 'col-span-1 row-span-2 flex flex-col gap-4 h-full';
 
         // Activity Tracker Section
-        const trackerSection = document.createElement('div');
-        trackerSection.className = 'flex-1 bg-white rounded-lg shadow-lg p-6 h-1/2';
-        trackerSection.innerHTML = `
-            <div id="activityTracker" class="h-full flex flex-col">
-                <div class="flex justify-between items-center mb-4">
-                    <h2 class="text-xl font-bold">Start Activity</h2>
-                    <div id="todayActivitiesTotal" class="text-2xl font-bold">00:00:00</div>
-                </div>
-                <div id="startButtonContainer" class="flex-1 flex items-center justify-center">
-                    <button 
-                        data-action="start-tracking" 
-                        id="startTracking"
-                        class="w-64 h-64 bg-green-500 hover:bg-green-600 text-white rounded-3xl shadow-lg transform transition-all duration-300 flex flex-col items-center justify-center">
-                        <span class="text-4xl font-bold mb-2">START</span>
-                        <span class="text-sm">DEPOSITING ACTIVITY TIME</span>
-                    </button>
-                </div>
-                <div id="timerContainer" class="hidden h-full">
-                    <div class="h-full flex flex-col items-center justify-center">
-                        <div id="timer" class="text-6xl font-bold mb-8">00:00:00</div>
+        leftColumn.innerHTML = `
+            <div class="flex-1 bg-white rounded-lg shadow-lg p-6 h-1/2 flex flex-col">
+                <div id="activityTracker" class="h-full flex flex-col">
+                    <div class="flex justify-between items-center mb-4">
+                        <h2 class="text-xl font-bold">Start Activity</h2>
+                        <div id="todayActivitiesTotal" class="text-2xl font-bold">00:00:00</div>
+                    </div>
+                    <div id="startButtonContainer" class="flex-1 flex items-center justify-center">
                         <button 
-                            data-action="stop-tracking"
-                            id="stopTracking" 
-                            class="w-48 h-48 bg-red-500 hover:bg-red-600 text-white rounded-3xl shadow-lg flex flex-col items-center justify-center">
-                            <span class="text-2xl font-bold mb-2">STOP</span>
-                            <span class="text-sm text-center">ACTIVITY AND<br>DEPOSIT TO MY BANK</span>
+                            data-action="start-tracking" 
+                            id="startTracking"
+                            class="w-64 h-64 bg-green-500 hover:bg-green-600 text-white rounded-3xl shadow-lg transform transition-all duration-300 flex flex-col items-center justify-center">
+                            <span class="text-4xl font-bold mb-2">START</span>
+                            <span class="text-sm">DEPOSITING ACTIVITY TIME</span>
                         </button>
+                    </div>
+                    <div id="timerContainer" class="hidden h-full">
+                        <div class="h-full flex flex-col items-center justify-center">
+                            <div id="timer" class="text-6xl font-bold mb-8">00:00:00</div>
+                            <button 
+                                data-action="stop-tracking"
+                                id="stopTracking" 
+                                class="w-48 h-48 bg-red-500 hover:bg-red-600 text-white rounded-3xl shadow-lg flex flex-col items-center justify-center">
+                                <span class="text-2xl font-bold mb-2">STOP</span>
+                                <span class="text-sm text-center">ACTIVITY AND<br>DEPOSIT TO MY BANK</span>
+                            </button>
+                        </div>
                     </div>
                 </div>
             </div>
-        `;
 
-        // Add Today's Activities List Section
-        const activitiesSection = document.createElement('div');
-        activitiesSection.className = 'flex-1 bg-white rounded-lg shadow-lg p-6 h-1/2';
-        activitiesSection.innerHTML = `
-            <div class="flex justify-between items-center mb-4">
-                <h2 class="text-xl font-bold">Today's Activities</h2>
-                <divclass="text-2xl font-bold"></div>
-            </div>
-            <div id="activitiesList" class="h-[calc(100%-3rem)] overflow-y-auto">
-                <!-- Today's wallet content will be inserted here -->
+            <div class="flex-1 bg-white rounded-lg shadow-lg p-6 h-1/2 flex flex-col">
+                <div class="flex justify-between items-center mb-4">
+                    <h2 class="text-xl font-bold">Today's Activities</h2>
+                </div>
+                <div id="activitiesList" class="overflow-y-auto h-full">
+                    <!-- Activities will be inserted here -->
+                </div>
             </div>
         `;
-
-        leftColumn.appendChild(trackerSection);
-        leftColumn.appendChild(activitiesSection);
 
         return leftColumn;
     }
 
-    /**
-     * Creates the right column with wallet information
-     * @returns {HTMLElement}
-     * @private
-     */
     _createRightColumn() {
         const rightColumn = document.createElement('div');
         rightColumn.className = 'col-span-1 row-span-2 flex flex-col gap-4 h-full';
-
-        // Today's Wallet Section
-        const todayWallet = document.createElement('div');
-        todayWallet.id = 'todayWalletPanel';
-        todayWallet.className = 'flex-1 bg-white rounded-lg shadow-lg p-6 h-1/2';
-        todayWallet.innerHTML = `
-        <div id="timeUsageTracker" class="h-full flex flex-col">
-            <div class="flex justify-between items-center mb-4">
-                <h2 class="text-xl font-bold">Today's Wallet Earned Time </h2>
-                <div id="todayTotalTimeLeft" class="text-2xl font-bold">00:00:00</div>
-            </div>
-            <div id="startUsageContainer" class="flex-1 flex items-center justify-center">
-                <button 
-                    data-action="start-usage" 
-                    id="startTimeUsage"
-                    class="w-64 h-64 bg-yellow-200 hover:bg-yellow-300 text-gray-800 rounded-3xl shadow-lg transform transition-all duration-300 flex flex-col items-center justify-center">
-                    <span class="text-4xl font-bold mb-2">USE</span>
-                    <span class="text-sm">MY TIME</span>
-                </button>
-            </div>
-            <div id="usageTimerContainer" class="hidden h-full">
-                <div class="h-full flex flex-col items-center justify-center">
-                    <div id="usageTimer" class="text-6xl font-bold mb-8">00:00:00</div>
-                    <button 
-                        data-action="stop-usage"
-                        id="stopTimeUsage" 
-                        class="w-48 h-48 bg-red-200 hover:bg-red-300 text-gray-800 rounded-3xl shadow-lg flex flex-col items-center justify-center">
-                        <span class="text-2xl font-bold mb-2">STOP</span>
-                        <span class="text-sm text-center">USING TIME</span>
-                    </button>
+    
+        rightColumn.innerHTML = `
+            <div id="todayWalletPanel" class="flex-1 bg-white rounded-lg shadow-lg p-6 h-1/2 flex flex-col">
+                <div id="timeUsageTracker" class="h-full flex flex-col">
+                    <div class="flex justify-between items-center mb-4">
+                        <h2 class="text-xl font-bold">Today's Wallet Earned Time</h2>
+                        <div id="todayTotalTimeLeft" class="text-2xl font-bold">00:00:00</div>
+                    </div>
+    
+                    <!-- Centering the USE button exactly like the START button -->
+                    <div id="startUsageContainer" class="flex-1 flex items-center justify-center h-full">
+                        <button 
+                            data-action="start-usage" 
+                            id="startTimeUsage"
+                            class="w-64 h-64 bg-yellow-200 hover:bg-yellow-300 text-gray-800 rounded-3xl shadow-lg transform transition-all duration-300 flex flex-col items-center justify-center">
+                            <span class="text-4xl font-bold mb-2">USE</span>
+                            <span class="text-sm">MY TIME</span>
+                        </button>
+                    </div>
+    
+                    <!-- Hidden usage timer container -->
+                    <div id="usageTimerContainer" class="hidden h-full">
+                        <div class="h-full flex flex-col items-center justify-center">
+                            <div id="usageTimer" class="text-6xl font-bold mb-8">00:00:00</div>
+                            <button 
+                                data-action="stop-usage"
+                                id="stopTimeUsage" 
+                                class="w-48 h-48 bg-red-200 hover:bg-red-300 text-gray-800 rounded-3xl shadow-lg flex flex-col items-center justify-center">
+                                <span class="text-2xl font-bold mb-2">STOP</span>
+                                <span class="text-sm text-center">USING TIME</span>
+                            </button>
+                        </div>
+                    </div>
+                </div>
+    
+                <div id="todayWalletContent" class="h-full overflow-y-auto">
+                    <!-- Today's wallet content will be inserted here -->
                 </div>
             </div>
-        </div>
-        `;        
-
-        // Holiday Wallet Section
-        const holidayWallet = document.createElement('div');
-        holidayWallet.className = 'flex-1 bg-white rounded-lg shadow-lg p-6 h-1/2';
-        holidayWallet.innerHTML = `
-            <div class="flex justify-between items-center mb-4">
-                <h2 class="text-xl font-bold">Holiday Wallet</h2>
-                <div class="flex items-center gap-2">
-                    <span id="holidayTotal" class="text-2xl font-bold">00:00:00</span>
-                    <button id="holidayInfo" class="w-6 h-6 rounded-full bg-blue-100 text-blue-600 flex items-center justify-center">
-                        i
-                    </button>
+    
+            <div id="holidayWallet" class="flex-1 bg-white rounded-lg shadow-lg p-6 h-1/2 flex flex-col">
+                <div class="flex justify-between items-center mb-4">
+                    <h2 class="text-xl font-bold">Holiday Wallet</h2>
+                    <div class="flex items-center gap-2">
+                        <span id="holidayTotal" class="text-2xl font-bold">00:00:00</span>
+                        <button id="holidayInfo" class="w-6 h-6 rounded-full bg-blue-100 text-blue-600 flex items-center justify-center">
+                            i
+                        </button>
+                    </div>
                 </div>
-            </div>
-            <div id="holidayWalletContent" class="h-[calc(100%-3rem)] overflow-y-auto">
-                <!-- Holiday wallet content will be inserted here -->
+                <div class="mb-2">
+                    <span id="weekendBonus" class="text-sm text-gray-600"></span>
+                </div>
+                <div id="holidayWalletContent" class="h-full overflow-y-auto">
+                    <!-- Holiday wallet content will be inserted here -->
+                </div>
             </div>
         `;
-
-        rightColumn.appendChild(todayWallet);
-        rightColumn.appendChild(holidayWallet);
+    
         return rightColumn;
     }
+    
+
 }
