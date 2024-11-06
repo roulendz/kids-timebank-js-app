@@ -91,7 +91,7 @@ export class DateTimeUtils {
         if (dTarget.getDay() !== 4) {
             dTarget.setMonth(0, 1 + ((4 - dTarget.getDay()) + 7) % 7);
         }
-        return 1 + Math.ceil((firstThursday - dTarget) / 604800000);
+        return 1 + Math.ceil((firstThursday - dTarget.valueOf()) / 604800000);
     }
 
     /**
@@ -126,7 +126,7 @@ export class DateTimeUtils {
     /**
      * Format deposit time info
      * @param {TimeDeposit} deposit - Time deposit
-     * @returns {string} Formatted deposit time info
+     * @returns {{depositedTime: string, bonusTime: string, totalTime: string}} Formatted deposit time info
      */
     static formatDepositTimeInfo(deposit) {
         const totalTime = deposit.nDepositedTime + deposit.nBonusTime;
