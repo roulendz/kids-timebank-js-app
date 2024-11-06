@@ -22,7 +22,7 @@ export class WalletPage extends BasePage {
 
     /**
      * Initialize the wallet page
-     * @private
+     * @protected
      */
     async initialize() {
         // First call parent initialization
