@@ -168,4 +168,41 @@ export class TimerAnimationService {
             toElement.textContent = timeValue;
         }, 1000);
     }
+
+
+    /**
+ * Animate time deduction to total
+ * @param {HTMLElement} fromElement - Element to animate from
+ * @param {HTMLElement} toElement - Element to animate to
+ * @param {string} timeValue - Time value to display
+ * @returns {Promise<void>}
+ */
+async animateTimeDeduction(fromElement, toElement, timeValue) {
+    const floatingTime = document.createElement('div');
+    floatingTime.className = 'text-6xl font-bold fixed transition-all duration-1000';
+    floatingTime.textContent = timeValue;
+    
+    const fromRect = fromElement.getBoundingClientRect();
+    const toRect = toElement.getBoundingClientRect();
+    
+    // Position at start and set initial color
+    floatingTime.style.left = `${fromRect.left}px`;
+    floatingTime.style.top = `${fromRect.top}px`;
+    floatingTime.style.color = '#ef4444'; // Red color
+    
+    document.body.appendChild(floatingTime);
+
+    // Start animation
+    await new Promise(resolve => setTimeout(resolve, 50));
+    
+    floatingTime.style.left = `${toRect.left}px`;
+    floatingTime.style.top = `${toRect.top}px`;
+    floatingTime.style.transform = 'scale(0.5)'; // Scale down for the total
+    
+    // Remove after animation and update target
+    setTimeout(() => {
+        floatingTime.remove();
+        toElement.textContent = timeValue;
+    }, 1000);
+}
 }

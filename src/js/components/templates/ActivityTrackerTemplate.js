@@ -18,7 +18,9 @@ export class ActivityTrackerTemplate {
         this.walletCalculationService = new WalletCalculationService();
         this.timeTrackingService = new TimeTrackingService(sUserId);
         this.timerInterval = null;
-        this.sUserId = sUserId; // Add this line
+        this.sUserId = sUserId;
+        this.usageTimerInterval = null;
+        this.remainingTime = 0;
     }
 
     /**
@@ -75,6 +77,116 @@ export class ActivityTrackerTemplate {
                 await this._handleStopTracking();
             });
         }
+
+        // Add usage button listeners
+        const startUsageBtn = document.getElementById('startTimeUsage');
+        const stopUsageBtn = document.getElementById('stopTimeUsage');
+        
+        if (startUsageBtn) {
+            startUsageBtn.addEventListener('click', () => {
+                this._startTimeUsage();
+            });
+        }
+
+        if (stopUsageBtn) {
+            stopUsageBtn.addEventListener('click', async () => {
+                await this._stopTimeUsage();
+            });
+        }
+    }
+
+     /**
+     * Start using time from wallet
+     * @private
+     */
+     async _startTimeUsage() {
+        const totalTimeElement = document.getElementById('todayTotalTimeLeft');
+        const usageTimerElement = document.getElementById('usageTimer');
+        
+        if (!totalTimeElement || !usageTimerElement) return;
+
+        // Get the current total time in milliseconds
+        const [hours, minutes, seconds] = totalTimeElement.textContent.split(':').map(Number);
+        this.remainingTime = ((hours * 3600) + (minutes * 60) + seconds) * 1000;
+
+        // Animate the time moving down
+        await this.timerAnimationService.animateTimeToUsage(
+            totalTimeElement,
+            usageTimerElement,
+            totalTimeElement.textContent
+        );
+
+        // Start countdown
+        this._startCountdown();
+        
+        // Toggle visibility
+        this._toggleUsageVisibility(true);
+    }
+
+    /**
+     * Start countdown timer
+     * @private
+     */
+    _startCountdown() {
+        if (this.usageTimerInterval) {
+            clearInterval(this.usageTimerInterval);
+        }
+
+        const usageTimerElement = document.getElementById('usageTimer');
+        
+        this.usageTimerInterval = setInterval(() => {
+            this.remainingTime -= 1000;
+            
+            if (this.remainingTime <= 0) {
+                clearInterval(this.usageTimerInterval);
+                this.remainingTime = 0;
+            }
+            
+            usageTimerElement.textContent = DateTimeUtils.formatDuration(this.remainingTime);
+        }, 1000);
+    }
+
+    /**
+     * Stop using time
+     * @private
+     */
+    async _stopTimeUsage() {
+        clearInterval(this.usageTimerInterval);
+        
+        const usageTimerElement = document.getElementById('usageTimer');
+        const totalTimeElement = document.getElementById('todayTotalTimeLeft');
+        
+        if (!totalTimeElement || !usageTimerElement) return;
+
+        // Animate the time moving back up
+        await this.timerAnimationService.animateTimeToTotal(
+            usageTimerElement,
+            totalTimeElement,
+            usageTimerElement.textContent
+        );
+
+        // Toggle visibility
+        this._toggleUsageVisibility(false);
+    }
+
+    /**
+     * Toggle usage timer visibility
+     * @param {boolean} show - Whether to show the usage timer
+     * @private
+     */
+    _toggleUsageVisibility(show) {
+        const startContainer = document.getElementById('startUsageContainer');
+        const timerContainer = document.getElementById('usageTimerContainer');
+        
+        if (startContainer && timerContainer) {
+            if (show) {
+                startContainer.classList.add('hidden');
+                timerContainer.classList.remove('hidden');
+            } else {
+                timerContainer.classList.add('hidden');
+                startContainer.classList.remove('hidden');
+            }
+        }
     }
 
     /**
@@ -89,10 +201,12 @@ export class ActivityTrackerTemplate {
             return;
         }
 
-        const totalAvailableMs = this.walletCalculationService.calculateTotalAvailableTime(activities);
+        const totalAvailableMs = this.walletCalculationService.calculateTotalLeftPlayTimeToday(activities);
+        const totalActivityDuration = this.walletCalculationService.calculateTotalActivityAcumulatedDurationToday(activities);
         console.log('Total available milliseconds to display:', totalAvailableMs);
         
         const formattedTime = DateTimeUtils.formatDuration(totalAvailableMs);
+        const formattedActivityDuration = DateTimeUtils.formatDuration(totalActivityDuration);
         console.log('Formatted time to display:', formattedTime);
         
         // Update both displays
@@ -101,7 +215,7 @@ export class ActivityTrackerTemplate {
         // Also update the activities total in the left column
         const activitiesTotalElement = document.getElementById('todayActivitiesTotal');
         if (activitiesTotalElement) {
-            activitiesTotalElement.textContent = formattedTime;
+            activitiesTotalElement.textContent = formattedActivityDuration;
         }
 
         console.log('Updated display values:', {
@@ -147,10 +261,6 @@ export class ActivityTrackerTemplate {
     async _handleStopTracking() {
         const timerElement = document.getElementById('timer');
         const finalTime = timerElement.textContent;
-
-        // Add activity to state manager
-        const newActivity = this.timeTrackingService.stopTracking('Activity');
-        await stateManager.addActivity(newActivity);
 
         // Get updated activities
         const activities = await stateManager.getActivities(this.sUserId);

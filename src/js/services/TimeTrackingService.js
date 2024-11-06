@@ -191,11 +191,11 @@ export class TimeTrackingService {
     }
 
     /**
-     * Calculate total available time from activities
+     * Calculate total available time from Play
      * @param {Activity[]} arActivities - List of activities
      * @returns {number} Total available time in milliseconds
      */
-    calculateTotalAvailableTime(arActivities) {
+    calculateTotalLeftPlayTimeToday(arActivities) {
         return arActivities
             .filter(activity => activity.bIsAvailableForDeposit)
             .reduce((total, activity) => 

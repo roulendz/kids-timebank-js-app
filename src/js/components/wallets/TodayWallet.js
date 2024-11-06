@@ -290,7 +290,7 @@ export class TodayWallet {
      async isTimeUsageExceeded(usedTime) {
         const userId = this.stateManager.getCurrentUserId();
         const activities = await this.stateManager.getActivities(userId);
-        const totalAvailable = this.walletCalculationService.calculateTotalAvailableTime(activities);
+        const totalAvailable = this.walletCalculationService.calculateTotalLeftPlayTimeToday(activities);
         
         return usedTime > totalAvailable;
     }

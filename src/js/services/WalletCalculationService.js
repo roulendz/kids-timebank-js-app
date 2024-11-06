@@ -18,17 +18,15 @@ export class WalletCalculationService {
     }
 
     /**
-     * Calculate total available time from today's activities
+     * Calculate total available play time from today's activities
      * @param {Activity[]} arActivities - Array of all activities
      * @returns {number} Total available time in milliseconds
      */
-    calculateTotalAvailableTime(arActivities) {
+    calculateTotalLeftPlayTimeToday(arActivities) {
         if (!Array.isArray(arActivities)) {
             console.warn('Activities is not an array:', arActivities);
             return 0;
         }
-
-        console.log('Calculating total for activities:', arActivities);
 
         const todayStart = new Date();
         todayStart.setHours(0, 0, 0, 0);
@@ -42,11 +40,35 @@ export class WalletCalculationService {
             )
             .reduce((total, activity) => {
                 const availableTime = activity.nDuration - (activity.nUsedDuration || 0);
-                console.log(`Activity ${activity.sId}: Duration=${activity.nDuration}, Used=${activity.nUsedDuration}, Available=${availableTime}`);
                 return total + availableTime;
             }, 0);
 
-        console.log('Total available time (ms):', total);
+        return total;
+    }
+
+    /**
+     * Calculate total acumulated activity duration for today.
+     * @param {Activity[]} arActivities - Array of all activities
+     * @returns {number} Total duration in milliseconds
+     */
+    calculateTotalActivityAcumulatedDurationToday(arActivities) {
+        if (!Array.isArray(arActivities)) {
+            console.warn('Activities is not an array:', arActivities);
+            return 0;
+        }
+
+        const todayStart = new Date();
+        todayStart.setHours(0, 0, 0, 0);
+        
+        const total = arActivities
+            .filter(activity => 
+                activity.nStartTime >= todayStart.getTime() &&
+                !isNaN(activity.nDuration)
+            )
+            .reduce((total, activity) => {
+                return total + activity.nDuration;
+            }, 0);
+
         return total;
     }
 
