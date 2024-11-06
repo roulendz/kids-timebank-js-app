@@ -133,61 +133,6 @@ export class ActivityTrackerTemplate {
     }
 
     /**
-     * Handle start time usage button click
-     * @private
-     */
-    async _handleStartTimeUsage() {
-        const arActivities = await stateManager.getActivities(this.sUserId);
-        const sActivityId = this.timeTrackingService.startTimeUsage(arActivities);
-        
-        if (sActivityId) {
-            this._startUsageTimer();
-            this._toggleVisibility('usage', true);
-        }
-    }
-
-    /**
-     * Handle stop time usage button click
-     * @private
-     */
-    async _handleStopTimeUsage() {
-        const arActivities = await stateManager.getActivities(this.sUserId);
-        const arUpdatedActivities = this.timeTrackingService.stopTimeUsage(arActivities);
-        
-        await stateManager.updateActivities(arUpdatedActivities);
-        this._stopUsageTimer();
-        this._toggleVisibility('usage', false);
-        this._updateDisplays(arUpdatedActivities);
-    }
-
-    /**
-     * Start timer updates for tracking
-     * @private
-     */
-    _startTimerUpdates() {
-        if (this.timerInterval) clearInterval(this.timerInterval);
-        
-        let nStartTime = Date.now();
-        this.timerInterval = setInterval(() => {
-            if (this.domRefs.timer) {
-                const nElapsed = Date.now() - nStartTime;
-                this.domRefs.timer.textContent = DateTimeUtils.formatDuration(nElapsed);
-            }
-        }, 1000);
-    }
-
-    /**
-     * Stop timer updates
-     * @private
-     */
-    async _stopTimerUpdates() {
-        if (this.timerInterval) {
-            clearInterval(this.timerInterval);
-            this.timerInterval = null;
-        }
-    }
-
-    /**
      * Start usage timer updates
      * @private
      */
@@ -274,13 +219,11 @@ export class ActivityTrackerTemplate {
     
         rightColumn.innerHTML = `
             <div id="todayWalletPanel" class="flex-1 bg-white rounded-lg shadow-lg p-6 h-1/2 flex flex-col">
-                <div id="timeUsageTracker" class="h-full flex flex-col">
-                    <div class="flex justify-between items-center mb-4">
+                <div id="timeUsageTracker" class="h-full flex flex-col justify-center items-center">
+                    <div class="flex justify-between items-center mb-4 w-full">
                         <h2 class="text-xl font-bold">Today's Wallet Earned Time</h2>
                         <div id="todayTotalTimeLeft" class="text-2xl font-bold">00:00:00</div>
                     </div>
-    
-                    <!-- Centering the USE button exactly like the START button -->
                     <div id="startUsageContainer" class="flex-1 flex items-center justify-center h-full">
                         <button 
                             data-action="start-usage" 
@@ -290,24 +233,16 @@ export class ActivityTrackerTemplate {
                             <span class="text-sm">MY TIME</span>
                         </button>
                     </div>
-    
-                    <!-- Hidden usage timer container -->
-                    <div id="usageTimerContainer" class="hidden h-full">
-                        <div class="h-full flex flex-col items-center justify-center">
-                            <div id="usageTimer" class="text-6xl font-bold mb-8">00:00:00</div>
-                            <button 
-                                data-action="stop-usage"
-                                id="stopTimeUsage" 
-                                class="w-48 h-48 bg-red-200 hover:bg-red-300 text-gray-800 rounded-3xl shadow-lg flex flex-col items-center justify-center">
-                                <span class="text-2xl font-bold mb-2">STOP</span>
-                                <span class="text-sm text-center">USING TIME</span>
-                            </button>
-                        </div>
+                    <div id="usageTimerContainer" class="hidden h-full flex flex-col items-center justify-center">
+                        <div id="usageTimer" class="text-6xl font-bold mb-8">00:00:00</div>
+                        <button 
+                            data-action="stop-usage"
+                            id="stopTimeUsage" 
+                            class="w-48 h-48 bg-red-200 hover:bg-red-300 text-gray-800 rounded-3xl shadow-lg flex flex-col items-center justify-center">
+                            <span class="text-2xl font-bold mb-2">STOP</span>
+                            <span class="text-sm text-center">USING TIME</span>
+                        </button>
                     </div>
-                </div>
-    
-                <div id="todayWalletContent" class="h-full overflow-y-auto">
-                    <!-- Today's wallet content will be inserted here -->
                 </div>
             </div>
     
@@ -326,6 +261,9 @@ export class ActivityTrackerTemplate {
                 </div>
                 <div id="holidayWalletContent" class="h-full overflow-y-auto">
                     <!-- Holiday wallet content will be inserted here -->
+                </div>
+                <div id="todayWalletContent" class="h-full overflow-y-auto">
+                    <!-- Today's wallet content will be inserted here -->
                 </div>
             </div>
         `;

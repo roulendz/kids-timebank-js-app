@@ -4,9 +4,8 @@
  */
 
 /** @typedef {import('../../types/Types.js').TimeDeposit} TimeDeposit */
-/** @typedef {import('../../types/Types.js').DepositStatus} DepositStatus */
-/** @typedef {import('../../types/Types.js').WalletType} WalletType */
 /** @typedef {import('../../types/Types.js').UserSettings} UserSettings */
+/** @typedef {import('../../types/Types.js').HTMLElementWithData} HTMLElementWithData */
 
 import { WalletType, DepositStatus } from '../../types/Types.js';
 
@@ -97,9 +96,10 @@ export class HolidayWallet {
         // Delegate events for deposit items
         if (this.contentContainer) {
             this.contentContainer.addEventListener('click', (e) => {
-                const cancelButton = e.target.closest('.cancel-deposit');
+                const obTarget = /** @type {HTMLElementWithData} */ (e.target);
+                const cancelButton = obTarget.closest('.cancel-deposit');
                 if (cancelButton) {
-                    const depositId = cancelButton.closest('[data-deposit-id]')?.dataset.depositId;
+                    const depositId = /** @type {HTMLElementWithData} */ (cancelButton).dataset.depositId;
                     if (depositId) {
                         this._handleCancelDeposit(depositId);
                     }

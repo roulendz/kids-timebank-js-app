@@ -1,9 +1,13 @@
+// @ts-check
 /**
  * @file src/js/services/TimerAnimationService.js
  * Service for handling timer animations and sound effects
  */
 
 export class TimerAnimationService {
+    /** @type {HTMLAudioElement} */
+    audio;
+
     /**
      * Initialize the animation service
      */
@@ -13,18 +17,19 @@ export class TimerAnimationService {
 
     /**
      * Animate timer value floating to wallet total
-     * @param {string} fromValue - Starting time value
-     * @param {string} targetValue - End time value
      * @returns {Promise<void>}
      */
     async animateTimerToWallet() {
+        /** @type {HTMLElement|null} */
         const timer = document.getElementById('timer');
+        /** @type {HTMLElement|null} */
         const targetElement = document.getElementById('todayTotalTimeLeft');
         
         if (!timer || !targetElement) return;
 
         // Create floating element
-        const floatingTimer = timer.cloneNode(true);
+        /** @type {HTMLElement} */
+        const floatingTimer = /** @type {HTMLElement} */ (timer.cloneNode(true));
         floatingTimer.style.position = 'fixed';
         floatingTimer.style.zIndex = '1000';
         floatingTimer.classList.add('timer-float');
@@ -68,6 +73,7 @@ export class TimerAnimationService {
      * @param {string} totalTime - New total time to display
      */
     updateTotalTime(totalTime) {
+        /** @type {HTMLElement|null} */
         const totalElement = document.getElementById('todayTotalTimeLeft');
         if (totalElement) {
             totalElement.textContent = totalTime;
@@ -125,7 +131,7 @@ export class TimerAnimationService {
         
         floatingTime.style.left = `${toRect.left}px`;
         floatingTime.style.top = `${toRect.top}px`;
-        floatingTime.style.transform = 'scale(2)'; // Scale up for the larger timer
+        floatingTime.style.transform = 'scale(2)';
         
         // Remove after animation
         setTimeout(() => {
@@ -160,7 +166,7 @@ export class TimerAnimationService {
         
         floatingTime.style.left = `${toRect.left}px`;
         floatingTime.style.top = `${toRect.top}px`;
-        floatingTime.style.transform = 'scale(0.5)'; // Scale down for the smaller total
+        floatingTime.style.transform = 'scale(0.5)';
         
         // Remove after animation
         setTimeout(() => {
@@ -169,40 +175,39 @@ export class TimerAnimationService {
         }, 1000);
     }
 
-
     /**
- * Animate time deduction to total
- * @param {HTMLElement} fromElement - Element to animate from
- * @param {HTMLElement} toElement - Element to animate to
- * @param {string} timeValue - Time value to display
- * @returns {Promise<void>}
- */
-async animateTimeDeduction(fromElement, toElement, timeValue) {
-    const floatingTime = document.createElement('div');
-    floatingTime.className = 'text-6xl font-bold fixed transition-all duration-1000';
-    floatingTime.textContent = timeValue;
-    
-    const fromRect = fromElement.getBoundingClientRect();
-    const toRect = toElement.getBoundingClientRect();
-    
-    // Position at start and set initial color
-    floatingTime.style.left = `${fromRect.left}px`;
-    floatingTime.style.top = `${fromRect.top}px`;
-    floatingTime.style.color = '#ef4444'; // Red color
-    
-    document.body.appendChild(floatingTime);
+     * Animate time deduction to total
+     * @param {HTMLElement} fromElement - Element to animate from
+     * @param {HTMLElement} toElement - Element to animate to
+     * @param {string} timeValue - Time value to display
+     * @returns {Promise<void>}
+     */
+    async animateTimeDeduction(fromElement, toElement, timeValue) {
+        const floatingTime = document.createElement('div');
+        floatingTime.className = 'text-6xl font-bold fixed transition-all duration-1000';
+        floatingTime.textContent = timeValue;
+        
+        const fromRect = fromElement.getBoundingClientRect();
+        const toRect = toElement.getBoundingClientRect();
+        
+        // Position at start and set initial color
+        floatingTime.style.left = `${fromRect.left}px`;
+        floatingTime.style.top = `${fromRect.top}px`;
+        floatingTime.style.color = '#ef4444';
+        
+        document.body.appendChild(floatingTime);
 
-    // Start animation
-    await new Promise(resolve => setTimeout(resolve, 50));
-    
-    floatingTime.style.left = `${toRect.left}px`;
-    floatingTime.style.top = `${toRect.top}px`;
-    floatingTime.style.transform = 'scale(0.5)'; // Scale down for the total
-    
-    // Remove after animation and update target
-    setTimeout(() => {
-        floatingTime.remove();
-        toElement.textContent = timeValue;
-    }, 1000);
-}
+        // Start animation
+        await new Promise(resolve => setTimeout(resolve, 50));
+        
+        floatingTime.style.left = `${toRect.left}px`;
+        floatingTime.style.top = `${toRect.top}px`;
+        floatingTime.style.transform = 'scale(0.5)';
+        
+        // Remove after animation and update target
+        setTimeout(() => {
+            floatingTime.remove();
+            toElement.textContent = timeValue;
+        }, 1000);
+    }
 }
