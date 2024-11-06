@@ -3,24 +3,12 @@
  * Holiday wallet component that manages holiday time deposits and bonus calculations
  */
 
-// Since Types.js exports an empty object, we need to use these as type definitions only
 /** @typedef {import('../../types/Types.js').TimeDeposit} TimeDeposit */
 /** @typedef {import('../../types/Types.js').DepositStatus} DepositStatus */
 /** @typedef {import('../../types/Types.js').WalletType} WalletType */
 /** @typedef {import('../../types/Types.js').UserSettings} UserSettings */
 
-// Import the actual values
-const WalletType = {
-    TODAY: 'today',
-    HOLIDAY: 'holiday'
-};
-
-const DepositStatus = {
-    PENDING: 'pending',
-    HOLIDAY_DEPOSITED: 'holiday_deposited',
-    USED: 'used',
-    EXPIRED: 'expired'
-};
+import { WalletType, DepositStatus } from '../../types/Types.js';
 
 /**
  * Manages holiday wallet functionality including deposits, bonuses, and display
@@ -41,18 +29,37 @@ export class HolidayWallet {
         
         /** @type {UserSettings|null} */
         this.userSettings = null;
-        
-        this._initializeElements();
-        this._bindEvents();
-        this._loadUserSettings();
-        this.updateDisplay();
+
+        // Defer initialization to ensure DOM is ready
+        requestAnimationFrame(() => this.initialize());
     }
 
-    /**
-     * Initialize DOM elements
+
+     /**
+     * Initialize the wallet component
      * @private
      */
-    _initializeElements() {
+     async initialize() {
+        try {
+            await this._initializeElements();
+            if (this._allElementsExist()) {
+                this._bindEvents();
+                await this._loadUserSettings();
+                await this.updateDisplay();
+            } else {
+                console.warn('Holiday wallet: Some required elements are missing');
+            }
+        } catch (error) {
+            console.error('Failed to initialize HolidayWallet:', error);
+        }
+    }
+
+     /**
+     * Initialize DOM elements
+     * @private
+     * @returns {Promise<void>}
+     */
+     async _initializeElements() {
         this.container = document.getElementById('holidayWallet');
         this.contentContainer = document.getElementById('holidayWalletContent');
         this.totalDisplay = document.getElementById('holidayTotal');
@@ -61,24 +68,44 @@ export class HolidayWallet {
     }
 
     /**
-     * Bind event listeners
+     * Check if all required elements exist
+     * @private
+     * @returns {boolean}
+     */
+    _allElementsExist() {
+        const requiredElements = [
+            this.contentContainer,
+            this.totalDisplay,
+            this.infoButton
+        ];
+        return requiredElements.every(element => element !== null);
+    }
+
+    /**
+     * Bind event listeners with error handling
      * @private
      */
     _bindEvents() {
-        this.infoButton.addEventListener('click', () => this._showInfoModal());
+        if (this.infoButton) {
+            this.infoButton.addEventListener('click', () => this._showInfoModal());
+        }
         
-        // Listen for deposit updates from other components
+        // Custom events
         document.addEventListener('depositAdded', () => this.updateDisplay());
         document.addEventListener('depositCanceled', () => this.updateDisplay());
         
-        // Delegate event listeners for deposit items
-        this.contentContainer.addEventListener('click', (e) => {
-            const cancelButton = e.target.closest('.cancel-deposit');
-            if (cancelButton) {
-                const depositId = cancelButton.closest('[data-deposit-id]').dataset.depositId;
-                this._handleCancelDeposit(depositId);
-            }
-        });
+        // Delegate events for deposit items
+        if (this.contentContainer) {
+            this.contentContainer.addEventListener('click', (e) => {
+                const cancelButton = e.target.closest('.cancel-deposit');
+                if (cancelButton) {
+                    const depositId = cancelButton.closest('[data-deposit-id]')?.dataset.depositId;
+                    if (depositId) {
+                        this._handleCancelDeposit(depositId);
+                    }
+                }
+            });
+        }
     }
 
     /**
