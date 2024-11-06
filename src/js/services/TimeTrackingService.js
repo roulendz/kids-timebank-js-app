@@ -65,7 +65,8 @@ export class TimeTrackingService {
             nDuration: nEndTime - this.obState.nStartTime,
             sUserId: this.sUserId,
             nUsedDuration: 0,
-            bIsAvailableForDeposit: true
+            bIsAvailableForDeposit: true,
+            bIsUsed: false
         };
 
         this.obState = {
