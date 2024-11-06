@@ -5,31 +5,55 @@
 
 import { Constants, INITIAL_STATE } from '../utils/Constants.js';
 import { generateId } from '../utils/IdUtils.js';
-
+import { DepositStatus } from '../types/Types.js';
 /**
  * @typedef {import('../types/Types').User} User
  * @typedef {import('../types/Types').Schedule} Schedule
  * @typedef {import('../types/Types').ID} ID
  * @typedef {import('../types/Types').TimeTrackingState} TimeTrackingState
+ * @typedef {import('../types/Types').Activity} Activity
+ * @typedef {import('../types/Types').TimeDeposit} TimeDeposit
+ * @typedef {import('../types/Types').UserSettings} UserSettings
+ * @typedef {Object} State
+ * @property {User[]} arUsers
+ * @property {string|null} sCurrentUserId
+ * @property {TimeTrackingState|null} obTrackingState
  */
 
 /**
  * Manages application state and persistence
+ * @class
  */
 export class StateManager {
+    /** @type {StateManager|null} */
+    static #instance = null;
+
+    /** @type {State|null} */
+    #obState = null;
+
     constructor() {
-        if (StateManager.instance) {
-            return StateManager.instance;
+        if (StateManager.#instance) {
+            return StateManager.#instance;
         }
 
-        this.obState = null; // Initialize state as null until loaded
-        StateManager.instance = this;
+        StateManager.#instance = this;
         this.init();
     }
 
     async init() {
         await this.loadState();
         this.ensureDefaultUser();
+    }
+
+    /**
+     * Gets the singleton instance of StateManager
+     * @returns {StateManager}
+     */
+    static getInstance() {
+        if (!StateManager.#instance) {
+            StateManager.#instance = new StateManager();
+        }
+        return StateManager.#instance;
     }
 
     async loadState() {
@@ -92,37 +116,76 @@ export class StateManager {
     }
 
     /**
-     * Update an existing activity
-     * @param {Activity} activity - Updated activity data
+     * Update an existing activity, e.g., mark as deposited
+     * @param {Activity} obActivity - Updated activity data
      * @returns {Promise<void>}
      */
-    async updateActivity(activity) {
-        const user = this.getUser(activity.sUserId);
-        if (user) {
-            const index = user.arActivityLog.findIndex(a => a.sId === activity.sId);
-            if (index !== -1) {
-                user.arActivityLog[index] = activity;
+    async updateActivity(obActivity) {
+        const obUser = this.getUser(obActivity.sUserId);
+        if (obUser) {
+            const iIndex = obUser.arActivityLog.findIndex(a => a.sId === obActivity.sId);
+            if (iIndex !== -1) {
+                obUser.arActivityLog[iIndex] = obActivity;
                 this.saveState();
             }
+        } else {
+            throw new Error(`User with ID ${obActivity.sUserId} not found`);
         }
     }
 
     /**
-     * Add a new deposit for the current user
-     * @param {TimeDeposit} deposit - Deposit data to add
+     * Check if an activity is eligible for deposit
+     * @param {string} sUserId - User ID
+     * @param {string} sActivityId - Activity ID to check
+     * @returns {boolean} True if eligible, false otherwise
      */
-    async addDeposit(deposit) {
-        const user = this.getUser(deposit.sUserId);
-        if (user) {
-            if (!user.arDeposits) {
-                user.arDeposits = [];
-            }
-            user.arDeposits.push(deposit);
-            this.saveState();
-        } else {
-            throw new Error(`User with ID ${deposit.sUserId} not found`);
+    isEligibleForDeposit(sUserId, sActivityId) {
+        const obUser = this.getUser(sUserId);
+        if (!obUser) return false;
+
+        // Locate the specific activity by ID
+        const obActivity = obUser.arActivityLog.find(a => a.sId === sActivityId);
+        
+        // Check if activity exists and has time left for deposit
+        if (obActivity) {
+            const nRemainingTime = obActivity.nDuration - (obActivity.nUsedDuration || 0);
+            return nRemainingTime > 0;
         }
+
+        return false;  // Activity not found or no time left for deposit
     }
+
+
+
+    /**
+     * Add a new deposit for the current user if eligible
+     * @param {TimeDeposit} obDeposit - Deposit data to add
+     */
+    async addDeposit(obDeposit) {
+        const obUser = this.getUser(obDeposit.sUserId);
+        if (!obUser) {
+            throw new Error(`User with ID ${obDeposit.sUserId} not found`);
+        }
+
+        if (!obUser.arDeposits) {
+            obUser.arDeposits = [];
+        }
+
+        // Check if the deposit already exists to avoid duplicates
+        const bAlreadyDeposited = obUser.arDeposits.some(deposit => 
+            deposit.sActivityId === obDeposit.sActivityId &&
+            deposit.sStatus === DepositStatus.HOLIDAY_DEPOSITED
+        );
+
+        if (bAlreadyDeposited) {
+            console.warn(`Activity ${obDeposit.sActivityId} has already been deposited.`);
+            return;
+        }
+
+        obUser.arDeposits.push(obDeposit);
+        this.saveState();
+    }
+
 
     /**
      * Get activities for a given user
@@ -175,7 +238,10 @@ export class StateManager {
      */
     async getUserSettings(userId) {
         const user = this.getUser(userId);
-        return user ? user : null;
+        if (user && user.obSettings) {
+            return user.obSettings;
+        }
+        return null;
     }
 
     /**
@@ -253,4 +319,5 @@ export class StateManager {
     }
 }
 
-export const stateManager = new StateManager();
+// Export a singleton instance
+export const stateManager = StateManager.getInstance();
