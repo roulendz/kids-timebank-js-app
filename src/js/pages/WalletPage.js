@@ -17,7 +17,6 @@ export class WalletPage extends BasePage {
     constructor(sUserId) {
         super();
         this.sUserId = sUserId;
-        console.log("sUserId:", this.sUserId);
         this.initialize();
     }
 
@@ -26,52 +25,63 @@ export class WalletPage extends BasePage {
      * @private
      */
     async initialize() {
+        // First call parent initialization
+        await super.initialize();
+
         const timeCalculationService = new TimeCalculationService();
         const modalManager = new ModalManager();
 
-        // Ensure stateManager is initialized
-        await stateManager.init();
+        try {
+            // Ensure stateManager is initialized
+            await stateManager.init();
 
-        // Verify user exists
-        const user = stateManager.getUser(this.sUserId);
-        console.log("User after ensuring state load:", user);
-        if (!user) {
-            window.location.href = Constants.ROUTES.INDEX;
-            return;
-        }
+            // Verify user exists
+            const user = stateManager.getUser(this.sUserId);
+            if (!user) {
+                window.location.href = Constants.ROUTES.INDEX;
+                return;
+            }
 
-        // Set current user in the state manager
-        stateManager.setCurrentUserId(this.sUserId);
+            // Set current user in the state manager
+            stateManager.setCurrentUserId(this.sUserId);
 
-        // Get user's activities for today
-        const activities = await stateManager.getActivities(this.sUserId) || [];
-        const todayActivities = activities.filter(activity => {
-            const todayStart = new Date();
-            todayStart.setHours(0, 0, 0, 0);
-            return activity.nStartTime >= todayStart.getTime();
-        });
+            // Get user's activities for today
+            const activities = await stateManager.getActivities(this.sUserId) || [];
+            const todayActivities = activities.filter(activity => {
+                const todayStart = new Date();
+                todayStart.setHours(0, 0, 0, 0);
+                return activity.nStartTime >= todayStart.getTime();
+            });
 
-        // Check if the main container is already appended
-        if (!document.getElementById('walletContainer')) {
-            // Create page layout with user ID and activities
+            // Create and append the template first
             const template = new ActivityTrackerTemplate(this.sUserId);
             const mainContainer = template.createLayout(todayActivities);
-            mainContainer.id = 'walletContainer';  // Add unique ID to prevent duplication
+            mainContainer.id = 'walletContainer';
 
-            document.body.appendChild(mainContainer);
+            const content = document.getElementById('content');
+            if (content) {
+                content.appendChild(mainContainer);
+            } else {
+                document.body.appendChild(mainContainer);
+            }
+
+            // Wait for next frame to ensure DOM is updated
+            await new Promise(resolve => requestAnimationFrame(resolve));
+
+            // Initialize wallet components
+            this.todayWallet = new TodayWallet(
+                stateManager,
+                timeCalculationService,
+                modalManager
+            );
+
+            this.holidayWallet = new HolidayWallet(
+                stateManager,
+                timeCalculationService,
+                modalManager
+            );
+        } catch (error) {
+            console.error('Failed to initialize WalletPage:', error);
         }
-
-        // Initialize wallet components
-        this.todayWallet = new TodayWallet(
-            stateManager,
-            timeCalculationService,
-            modalManager
-        );
-
-        this.holidayWallet = new HolidayWallet(
-            stateManager,
-            timeCalculationService,
-            modalManager
-        );
     }
 }
