@@ -42,14 +42,10 @@
  * @property {number} nTimeBalance - Available time balance in seconds
  * @property {Schedule[]} arSchedule - Weekly schedule for using time
  * @property {Activity[]} [arActivityLog] - Optional array of activity logs
+ * @property {TimeDeposit[]} [arDeposits] - Optional array of time deposits
+ * @property {UserSettings} obSettings - User settings
  */
 
-/**
- * Represents the application's state
- * @typedef {Object} AppState
- * @property {User[]} arUsers - Array of all users
- * @property {string|null} sCurrentUserId - ID of currently selected user
- */
 
 // Add these to your existing Types.js file
 
@@ -116,6 +112,7 @@ export const DayOfWeek = {
  * @property {WalletType} sWalletType - Wallet type
  * @property {DepositStatus} sStatus - Deposit status
  * @property {number} nDepositedTime - Original deposited time in milliseconds
+ * @property {number} nUsedDepositedTime - How mutch time was used
  * @property {number} nBonusTime - Bonus time earned in milliseconds
  * @property {number} nDepositTimestamp - When the deposit was made
  * @property {number} nWeekNumber - ISO week number
@@ -131,15 +128,7 @@ export const DayOfWeek = {
  */
 
 /**
- * Extended user type with settings
- * @typedef {Object} UserExtended
- * @property {ID} sId - Unique identifier
- * @property {string} sName - User's full name
- * @property {string} sNickname - User's preferred nickname
- * @property {UserSettings} obSettings - User settings
- * @property {Schedule[]} arSchedule - Weekly schedule for using time
- * @property {Activity[]} [arActivityLog] - Optional array of activity logs
- * @property {TimeDeposit[]} [arDeposits] - Array of time deposits
+ * Extended user type with settin
  */
 
 /**
@@ -169,6 +158,48 @@ export const DayOfWeek = {
  * @property {string|null} sCurrentUserId - ID of currently selected user
  * @property {TimeTrackingState|null} obTrackingState - Current tracking state
  */
+
+
+
+/**
+ * Custom event for activity actions
+ * @typedef {CustomEvent<ActivityEventDetail>} ActivityEvent
+ */
+
+/**
+ * Activity event detail
+ * @typedef {Object} ActivityEventDetail
+ * @property {'start' | 'stop'} action - The action to perform
+ */
+
+/**
+ * Activity event options
+ * @typedef {Object} ActivityEventOptions
+ * @property {ActivityEventDetail} detail - The event detail object
+ */
+
+/**
+ * Extended HTMLElement interface with data attributes
+ * @typedef {Object} DataAttributes
+ * @property {string} [depositId] - Optional deposit ID
+ * @property {string} [activityId] - Optional activity ID
+ * @property {string} [action] - Optional action type
+ */
+
+/**
+ * @typedef {HTMLElement & {
+*   dataset: DataAttributes;
+*   closest<K extends keyof HTMLElementTagNameMap>(selector: string): HTMLElementTagNameMap[K] | null;
+*   closest<K extends keyof SVGElementTagNameMap>(selector: string): SVGElementTagNameMap[K] | null;
+*   closest<E extends Element = Element>(selector: string): E | null;
+* }} HTMLElementWithData
+*/
+
+/**
+* @typedef {MouseEvent & {
+*   target: HTMLElementWithData;
+* }} MouseEventWithData
+*/
 
 // Export type definitions for use in other files
 export {};
