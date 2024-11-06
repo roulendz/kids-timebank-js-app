@@ -3,18 +3,14 @@
  * Manages the today's wallet functionality including activity tracking and time calculations
  */
 
-// Import types and enums - make sure paths match your project structure
-import { WalletType, DepositStatus } from '../../types/Types.js';
-import { generateId } from '../../utils/IdUtils.js';
-import { WalletCalculationService } from '../../services/WalletCalculationService.js';
-
 // Use JSDoc imports for complex types
 /** @typedef {import('../../types/Types.js').TimeTrackingState} TimeTrackingState */
 /** @typedef {import('../../types/Types.js').Activity} Activity */
 /** @typedef {import('../../types/Types.js').TimeDeposit} TimeDeposit */
 
-// Import services
-import { stateManager } from '../../services/StateManager.js';
+import { WalletType, DepositStatus } from '../../types/Types.js';
+import { generateId } from '../../utils/IdUtils.js';
+import { WalletCalculationService } from '../../services/WalletCalculationService.js';
 import { DateTimeUtils } from '../../utils/DateTimeUtils.js';
 import { TimeCalculationService } from '../../services/TimeCalculationService.js';
 
@@ -35,13 +31,8 @@ export class TodayWallet {
         this.timeCalculationService = timeCalculationService;
         this.modalManager = modalManager;
         this.walletCalculationService = new WalletCalculationService();
-        this.startTimeUsageBtn = document.getElementById('startTimeUsage');
-        this.stopTimeUsageBtn = document.getElementById('stopTimeUsage');
-        this.usageTimerElement = document.getElementById('usageTimer');
-        this.usageTimerContainer = document.getElementById('usageTimerContainer');
-        this.startUsageContainer = document.getElementById('startUsageContainer');
 
-        // Initialize state and bind events as necessary
+        // Initialize base state
         this.trackingState = {
             bIsTracking: false,
             nStartTime: null,
@@ -49,28 +40,95 @@ export class TodayWallet {
         };
 
         this.timerInterval = null;
-        this.initializeElements();
-        this.bindEvents();
-        this.loadTrackingState();
-        this.updateActivitiesList();
-        this.updateWalletDisplay();
         
-        this.bindTimeUsageEvents();
+        // Defer initialization to ensure DOM is ready
+        requestAnimationFrame(() => this.initialize());
+    }
+
+    /**
+     * Initialize the wallet component
+     * @private
+     */
+    async initialize() {
+        try {
+            await this.initializeElements();
+            if (this.allElementsExist()) {
+                await this.loadTrackingState();
+                this.bindEvents();
+                await this.updateActivitiesList();
+                await this.updateWalletDisplay();
+                this.bindTimeUsageEvents();
+            } else {
+                console.warn('Some required elements are missing');
+            }
+        } catch (error) {
+            console.error('Failed to initialize TodayWallet:', error);
+        }
     }
 
     /**
      * Initialize DOM elements
      * @private
+     * @returns {Promise<void>}
      */
-    initializeElements() {
+    async initializeElements() {
+        // Core tracking elements
         this.startButton = document.getElementById('startTracking');
         this.stopButton = document.getElementById('stopTracking');
         this.timerElement = document.getElementById('timer');
         this.startButtonContainer = document.getElementById('startButtonContainer');
         this.timerContainer = document.getElementById('timerContainer');
+        this.todayActivitiesTotal = document.getElementById('todayActivitiesTotal');
+        
+        // Usage elements
+        this.startTimeUsageBtn = document.getElementById('startTimeUsage');
+        this.stopTimeUsageBtn = document.getElementById('stopTimeUsage');
+        this.usageTimerElement = document.getElementById('usageTimer');
+        this.usageTimerContainer = document.getElementById('usageTimerContainer');
+        this.startUsageContainer = document.getElementById('startUsageContainer');
+        
+        // Display elements
         this.activitiesList = document.getElementById('activitiesList');
         this.todayTotalTimeLeft = document.getElementById('todayTotalTimeLeft');
         this.todayWalletContent = document.getElementById('todayWalletContent');
+
+        // Verify critical elements
+        const missingElements = [];
+        [
+            { name: 'startButton', el: this.startButton },
+            { name: 'stopButton', el: this.stopButton },
+            { name: 'timerElement', el: this.timerElement },
+            { name: 'startButtonContainer', el: this.startButtonContainer },
+            { name: 'timerContainer', el: this.timerContainer },
+            { name: 'todayActivitiesTotal', el: this.todayActivitiesTotal }
+        ].forEach(({ name, el }) => {
+            if (!el) missingElements.push(name);
+        });
+
+        if (missingElements.length > 0) {
+            console.warn('Missing elements:', missingElements);
+            throw new Error(`Missing required elements: ${missingElements.join(', ')}`);
+        }
+    }
+
+    /**
+     * Check if all required elements exist
+     * @private
+     * @returns {boolean}
+     */
+    allElementsExist() {
+        const requiredElements = [
+            this.startButton,
+            this.stopButton,
+            this.timerElement,
+            this.startButtonContainer,
+            this.timerContainer,
+            this.activitiesList,
+            this.todayTotalTimeLeft,
+            this.todayWalletContent
+        ];
+
+        return requiredElements.every(element => element !== null);
     }
 
     /**
@@ -93,6 +151,14 @@ export class TodayWallet {
                 }
             });
         }
+
+        document.addEventListener('activityAction', (e) => {
+            if (e.detail.action === 'start') {
+                this.startTracking();
+            } else if (e.detail.action === 'stop') {
+                this.stopTracking();
+            }
+        });
     }
 
     /**
@@ -155,7 +221,7 @@ export class TodayWallet {
         const userId = this.stateManager.getCurrentUserId();
         console.log("userId:", userId);
         const activities = await this.stateManager.getActivities(userId);
-        console.log("activities:", activities);
+        console.log("2activities:", activities);
         const availableActivities = activities.filter(a => a.bIsAvailableForDeposit);
         console.log("availableActivities:", availableActivities);
 
@@ -336,7 +402,7 @@ export class TodayWallet {
         ]);
 
         // Update total available time
-        const totalAvailable = this.walletCalculationService.calculateTodayWalletBalance(deposits);
+        const totalAvailable = this.walletCalculationService.calculateTotalLeftPlayTimeToday(activities);
         if (this.todayTotalTimeLeft) {
             this.todayTotalTimeLeft.textContent = DateTimeUtils.formatDuration(totalAvailable);
         }
@@ -355,10 +421,6 @@ export class TodayWallet {
      * @private
      */
     createWalletContent(deposits) {
-        if (deposits.length === 0) {
-            return '<div class="text-center text-gray-500 py-4">No deposits yet today</div>';
-        }
-
         return deposits.map(({ deposit, activity }) => `
             <div class="flex items-center justify-between p-3 border-b" data-deposit-id="${deposit.sId}">
                 <div class="flex-1">
@@ -387,11 +449,11 @@ export class TodayWallet {
         `).join('');
     }
 
-    /**
+     /**
      * Start activity tracking
      * @private
      */
-    async startTracking() {
+     async startTracking() {
         this.trackingState.bIsTracking = true;
         this.trackingState.nStartTime = Date.now();
         
@@ -401,67 +463,86 @@ export class TodayWallet {
         
         // Start timer
         this.timerInterval = setInterval(() => this.updateTimer(), 1000);
-
+    
         // Save state immediately
         await this.saveTrackingState();
     }
 
-    /**
+     /**
      * Stop activity tracking and create deposit
      * @private
      */
-    async stopTracking() {
+     async stopTracking() {
         if (!this.trackingState.bIsTracking) return;
 
         const endTime = Date.now();
         const duration = endTime - this.trackingState.nStartTime;
 
-        // Create activity record
-        /** @type {Activity} */
-        const activity = {
-            sId: generateId(),
-            sDescription: this.trackingState.sCurrentActivityDescription || 'Unnamed activity',
-            nStartTime: this.trackingState.nStartTime,
-            nEndTime: endTime,
-            nDuration: duration,
-            nUsedDuration: 0,
-            bIsAvailableForDeposit: true,
-            sUserId: this.stateManager.getCurrentUserId()
-        };
+        try {
+            // Create activity record
+            /** @type {Activity} */
+            const activity = {
+                sId: generateId(),
+                sDescription: this.trackingState.sCurrentActivityDescription || 'Unnamed activity',
+                nStartTime: this.trackingState.nStartTime,
+                nEndTime: endTime,
+                nDuration: duration,
+                nUsedDuration: 0,
+                bIsAvailableForDeposit: true,
+                sUserId: this.stateManager.getCurrentUserId()
+            };
 
-        // Create time deposit
-        /** @type {TimeDeposit} */
-        const deposit = {
-            sId: generateId(),
-            sUserId: activity.sUserId,
-            sActivityId: activity.sId,
-            sWalletType: WalletType.TODAY,
-            sStatus: DepositStatus.PENDING,
-            nDepositedTime: duration,
-            nBonusTime: 0,
-            nDepositTimestamp: Date.now(),
-            nWeekNumber: this.timeCalculationService.calculateWeekNumber(new Date()),
-            nYear: new Date().getFullYear()
-        };
+            // Save activity
+            await this.stateManager.addActivity(activity);
 
-        // Save records
-        await this.stateManager.addActivity(activity);
-        // await this.stateManager.addDeposit(deposit);
+            // Stop timer
+            clearInterval(this.timerInterval);
+            this.timerInterval = null;
 
-        // Reset tracking state
-        clearInterval(this.timerInterval);
-        this.trackingState.bIsTracking = false;
-        this.trackingState.nStartTime = null;
-        this.trackingState.sCurrentActivityDescription = '';
+            // Reset state
+            this.trackingState = {
+                bIsTracking: false,
+                nStartTime: null,
+                sCurrentActivityDescription: ''
+            };
 
-        // Save cleared state
-        await this.saveTrackingState();
+            // Update displayed values
+            const userId = this.stateManager.getCurrentUserId();
+            console.log("stopTracking userId:", userId);
+            const activities = await this.stateManager.getActivities(userId);
+            console.log("stopTracking activities:", activities);
+            const todayStart = new Date().setHours(0, 0, 0, 0);
+            const todayActivities = activities.filter(activity => 
+                activity.nStartTime >= todayStart
+            );
+            const totalAccumulated = this.walletCalculationService
+            .calculateTotalActivityAcumulatedDurationToday(todayActivities);
+            console.log('stopTracking totalAccumulated:', totalAccumulated);
 
-        // Update UI
-        this.timerContainer.classList.add('hidden');
-        this.startButtonContainer.classList.remove('hidden');
-        this.updateActivitiesList();
-        await this.updateWalletDisplay();
+            // Update total using class property
+            this.todayActivitiesTotal.textContent = DateTimeUtils.formatDuration(totalAccumulated);
+
+            // Save state and update displays
+            await this.saveTrackingState();
+            await this.updateActivitiesList();
+            await this.updateWalletDisplay();
+
+            // Notify other components
+            document.dispatchEvent(new CustomEvent('activityStopped', { 
+                detail: { activity } 
+            }));
+
+        } catch (error) {
+            console.error('Error stopping activity:', error);
+            this.modalManager?.showError({
+                sTitle: 'Error',
+                sContent: 'Failed to stop activity tracking. Please try again.'
+            });
+        } finally {
+            // Ensure UI is in a valid state regardless of success or failure
+            this.startButtonContainer.classList.remove('hidden');
+            this.timerContainer.classList.add('hidden');
+        }
     }
 
      /**
