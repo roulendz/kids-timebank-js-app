@@ -1,0 +1,11 @@
+{
+    "javascript.validate.enable": true,
+    "js/ts.implicitProjectConfig.checkJs": true,
+    "editor.codeActionsOnSave": {
+        "source.fixAll": true
+    },
+    "javascript.suggestionActions.enabled": true,
+    "typescript.suggestionActions.enabled": true,
+    "javascript.updateImportsOnFileMove.enabled": "always",
+    "typescript.updateImportsOnFileMove.enabled": "always"
+}
