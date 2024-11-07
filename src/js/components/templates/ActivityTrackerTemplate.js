@@ -69,7 +69,7 @@ export class ActivityTrackerTemplate {
      */
     createLayout(arActivities = []) {
         const container = document.createElement('div');
-        container.className = 'grid grid-cols-2 grid-rows-2 gap-4 h-screen p-4 overflow-hidden';
+        container.className = 'md:grid md:grid-cols-2 md:grid-rows-2 flex flex-col gap-4 min-h-screen p-4 overflow-auto md:overflow-hidden bg-gray-100';
         
         container.appendChild(this._createLeftColumn());
         container.appendChild(this._createRightColumn());
@@ -166,45 +166,45 @@ export class ActivityTrackerTemplate {
      */
     _createLeftColumn() {
         const leftColumn = document.createElement('div');
-        leftColumn.className = 'col-span-1 row-span-2 flex flex-col gap-4 h-full';
+        // Adjust height and spacing for mobile
+        leftColumn.className = 'md:col-span-1 md:row-span-2 flex flex-col gap-4 md:h-full h-auto';
 
-        // Activity Tracker Section
         leftColumn.innerHTML = `
-            <div class="flex-1 bg-white rounded-lg shadow-lg p-6 h-1/2 flex flex-col">
+            <div class="flex-1 bg-white rounded-lg shadow-lg p-4 md:p-6 md:h-1/2 flex flex-col">
                 <div id="activityTracker" class="h-full flex flex-col">
                     <div class="flex justify-between items-center mb-4">
-                        <h2 class="text-xl font-bold">Start Activity</h2>
-                        <div id="todayActivitiesTotal" class="text-2xl font-bold">00:00:00</div>
+                        <h2 class="text-lg md:text-xl font-bold">Start Activity</h2>
+                        <div id="todayActivitiesTotal" class="text-xl md:text-2xl font-bold">00:00:00</div>
                     </div>
                     <div id="startButtonContainer" class="flex-1 flex items-center justify-center">
                         <button 
                             data-action="start-tracking" 
                             id="startTracking"
-                            class="w-64 h-64 bg-green-500 hover:bg-green-600 text-white rounded-3xl shadow-lg transform transition-all duration-300 flex flex-col items-center justify-center">
-                            <span class="text-4xl font-bold mb-2">START</span>
-                            <span class="text-sm">DEPOSITING ACTIVITY TIME</span>
+                            class="w-48 h-48 md:w-64 md:h-64 bg-green-500 hover:bg-green-600 text-white rounded-3xl shadow-lg transform transition-all duration-300 flex flex-col items-center justify-center">
+                            <span class="text-3xl md:text-4xl font-bold mb-2">START</span>
+                            <span class="text-xs md:text-sm">DEPOSITING ACTIVITY TIME</span>
                         </button>
                     </div>
                     <div id="timerContainer" class="hidden h-full">
                         <div class="h-full flex flex-col items-center justify-center">
-                            <div id="timer" class="text-6xl font-bold mb-8">00:00:00</div>
+                            <div id="timer" class="text-4xl md:text-6xl font-bold mb-4 md:mb-8">00:00:00</div>
                             <button 
                                 data-action="stop-tracking"
                                 id="stopTracking" 
-                                class="w-48 h-48 bg-red-500 hover:bg-red-600 text-white rounded-3xl shadow-lg flex flex-col items-center justify-center">
-                                <span class="text-2xl font-bold mb-2">STOP</span>
-                                <span class="text-sm text-center">ACTIVITY AND<br>DEPOSIT TO MY BANK</span>
+                                class="w-36 h-36 md:w-48 md:h-48 bg-red-500 hover:bg-red-600 text-white rounded-3xl shadow-lg flex flex-col items-center justify-center">
+                                <span class="text-xl md:text-2xl font-bold mb-2">STOP</span>
+                                <span class="text-xs md:text-sm text-center">ACTIVITY AND<br>DEPOSIT TO MY BANK</span>
                             </button>
                         </div>
                     </div>
                 </div>
             </div>
 
-            <div class="flex-1 bg-white rounded-lg shadow-lg p-6 h-1/2 flex flex-col">
+            <div class="flex-1 bg-white rounded-lg shadow-lg p-4 md:p-6 md:h-1/2 flex flex-col min-h-[300px] md:min-h-0">
                 <div class="flex justify-between items-center mb-4">
-                    <h2 class="text-xl font-bold">Today's Activities</h2>
+                    <h2 class="text-lg md:text-xl font-bold">Today's Activities</h2>
                 </div>
-                <div id="activitiesList" class="overflow-y-auto h-full">
+                <div id="activitiesList" class="overflow-y-auto flex-1">
                     <!-- Activities will be inserted here -->
                 </div>
             </div>
@@ -213,57 +213,64 @@ export class ActivityTrackerTemplate {
         return leftColumn;
     }
 
+    /**
+     * Creates the right column with wallet information
+     * @returns {HTMLElement}
+     * @private
+     */
     _createRightColumn() {
         const rightColumn = document.createElement('div');
-        rightColumn.className = 'col-span-1 row-span-2 flex flex-col gap-4 h-full';
+        rightColumn.className = 'md:col-span-1 md:row-span-2 flex flex-col gap-4 md:h-full h-auto';
     
         rightColumn.innerHTML = `
-            <div id="todayWalletPanel" class="flex-1 bg-white rounded-lg shadow-lg p-6 h-1/2 flex flex-col">
+            <div id="todayWalletPanel" class="flex-1 bg-white rounded-lg shadow-lg p-4 md:p-6 md:h-1/2 flex flex-col min-h-[300px] md:min-h-0">
                 <div id="timeUsageTracker" class="h-full flex flex-col justify-center items-center">
                     <div class="flex justify-between items-center mb-4 w-full">
-                        <h2 class="text-xl font-bold">Today's Wallet Earned Time</h2>
-                        <div id="todayTotalTimeLeft" class="text-2xl font-bold">00:00:00</div>
+                        <h2 class="text-lg md:text-xl font-bold">Today's Wallet Earned Time</h2>
+                        <div id="todayTotalTimeLeft" class="text-xl md:text-2xl font-bold">00:00:00</div>
                     </div>
                     <div id="startUsageContainer" class="flex-1 flex items-center justify-center h-full">
                         <button 
                             data-action="start-usage" 
                             id="startTimeUsage"
-                            class="w-64 h-64 bg-yellow-200 hover:bg-yellow-300 text-gray-800 rounded-3xl shadow-lg transform transition-all duration-300 flex flex-col items-center justify-center">
-                            <span class="text-4xl font-bold mb-2">USE</span>
-                            <span class="text-sm">MY TIME</span>
+                            class="w-48 h-48 md:w-64 md:h-64 bg-yellow-200 hover:bg-yellow-300 text-gray-800 rounded-3xl shadow-lg transform transition-all duration-300 flex flex-col items-center justify-center">
+                            <span class="text-3xl md:text-4xl font-bold mb-2">USE</span>
+                            <span class="text-xs md:text-sm">MY TIME</span>
                         </button>
                     </div>
                     <div id="usageTimerContainer" class="hidden h-full flex flex-col items-center justify-center">
-                        <div id="usageTimer" class="text-6xl font-bold mb-8">00:00:00</div>
+                        <div id="usageTimer" class="text-4xl md:text-6xl font-bold mb-4 md:mb-8">00:00:00</div>
                         <button 
                             data-action="stop-usage"
                             id="stopTimeUsage" 
-                            class="w-48 h-48 bg-red-200 hover:bg-red-300 text-gray-800 rounded-3xl shadow-lg flex flex-col items-center justify-center">
-                            <span class="text-2xl font-bold mb-2">STOP</span>
-                            <span class="text-sm text-center">USING TIME</span>
+                            class="w-36 h-36 md:w-48 md:h-48 bg-red-200 hover:bg-red-300 text-gray-800 rounded-3xl shadow-lg flex flex-col items-center justify-center">
+                            <span class="text-xl md:text-2xl font-bold mb-2">STOP</span>
+                            <span class="text-xs md:text-sm text-center">USING TIME</span>
                         </button>
                     </div>
                 </div>
             </div>
     
-            <div id="holidayWallet" class="flex-1 bg-white rounded-lg shadow-lg p-6 h-1/2 flex flex-col">
+            <div id="holidayWallet" class="flex-1 bg-white rounded-lg shadow-lg p-4 md:p-6 md:h-1/2 flex flex-col min-h-[300px] md:min-h-0">
                 <div class="flex justify-between items-center mb-4">
-                    <h2 class="text-xl font-bold">Holiday Wallet</h2>
+                    <h2 class="text-lg md:text-xl font-bold">Holiday Wallet</h2>
                     <div class="flex items-center gap-2">
-                        <span id="holidayTotal" class="text-2xl font-bold">00:00:00</span>
+                        <span id="holidayTotal" class="text-xl md:text-2xl font-bold">00:00:00</span>
                         <button id="holidayInfo" class="w-6 h-6 rounded-full bg-blue-100 text-blue-600 flex items-center justify-center">
                             i
                         </button>
                     </div>
                 </div>
                 <div class="mb-2">
-                    <span id="weekendBonus" class="text-sm text-gray-600"></span>
+                    <span id="weekendBonus" class="text-xs md:text-sm text-gray-600"></span>
                 </div>
-                <div id="holidayWalletContent" class="h-full overflow-y-auto">
-                    <!-- Holiday wallet content will be inserted here -->
-                </div>
-                <div id="todayWalletContent" class="h-full overflow-y-auto">
-                    <!-- Today's wallet content will be inserted here -->
+                <div class="flex-1 flex flex-col">
+                    <div id="holidayWalletContent" class="flex-1 overflow-y-auto">
+                        <!-- Holiday wallet content will be inserted here -->
+                    </div>
+                    <div id="todayWalletContent" class="flex-1 overflow-y-auto mt-4">
+                        <!-- Today's wallet content will be inserted here -->
+                    </div>
                 </div>
             </div>
         `;
