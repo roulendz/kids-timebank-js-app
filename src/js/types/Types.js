@@ -8,31 +8,42 @@
  */
 
 /**
- * Represents an activity log entry
  * @typedef {Object} Activity
  * @property {string} sId - Unique identifier
- * @property {string} sType - Activity type (work/recreational)
- * @property {string} sDescription - Description of the activity
- * @property {number} nStartTime - Timestamp when activity started
- * @property {number} nEndTime - Timestamp when activity ended
- * @property {number} nDuration - Duration in milliseconds
- * @property {string} sUserId - ID of user who performed the activity
- * @property {number} nUsedDuration - Duration of time used from this activity (default: 0)
- * @property {boolean} bIsAvailableForDeposit - Whether activity can be deposited (default: true)
- * @property {boolean} bIsUsed - Whether activity time is fully used (default: false)
+ * @property {string} sDescription - Activity description
+ * @property {number} nStartTime - Activity start timestamp
+ * @property {number} nEndTime - Activity end timestamp
+ * @property {number} nDuration - Total activity duration in milliseconds
+ * @property {number} nUsedDuration - Amount of time already used/redeemed
+ * @property {boolean} bIsAvailableForDeposit - Whether activity can be deposited
+ * @property {string} sUserId - User ID who owns this activity
+ * @property {number} nWeekNumber - Week number of the activity
+ * @property {number} nYear - Year of the activity
+ */
+
+/**
+ * @typedef {Object} TimeDeposit
+ * @property {string} sId - Same ID as original activity
+ * @property {string} sDescription - Activity description
+ * @property {number} nStartTime - Original activity start time
+ * @property {number} nEndTime - Original activity end time
+ * @property {number} nDuration - Original activity duration
+ * @property {number} nUsedDuration - Amount of deposited time used
+ * @property {number} nDepositedDuration - Duration available at deposit time (nDuration - nUsedDuration)
+ * @property {number} nAccumulatedBonus - Total bonus time earned (daily +10%, holidays etc.)
+ * @property {number} nDepositTimestamp - When deposit was made
+ * @property {string} sUserId - User ID who owns this deposit
+ * @property {number} nWeekNumber - Week number of deposit
+ * @property {number} nYear - Year of deposit
+ * @property {boolean} bIsAvailableForDeposit - Whether deposit can still be used
  */
 
 /**
  * Unique identifier string
  * @typedef {string} ID
+ * 
  */
 
-/**
- * ID generation options
- * @typedef {Object} IdOptions
- * @property {string} [sPrefix] - Optional prefix for the ID
- * @property {boolean} [bSequential] - Whether to generate sequential ID
- * 
 /**
  * User with required ID
  * @typedef {Object} User
@@ -45,47 +56,6 @@
  * @property {TimeDeposit[]} [arDeposits] - Optional array of time deposits
  * @property {UserSettings} obSettings - User settings
  */
-
-
-// Add these to your existing Types.js file
-
-/**
- * Form submission data for creating/updating a user
- * @typedef {Object} UserFormData
- * @property {string} sName - User's full name
- * @property {string} sNickname - User's nickname
- * @property {Schedule[]} arSchedule - User's weekly schedule
- * @property {string} [sId] - User's ID (present only for updates)
- */
-
-/**
- * Child form component props
- * @typedef {Object} ChildFormProps
- * @property {(data: UserFormData) => void} fnOnSubmit - Form submission handler
- * @property {User|null} [obUser] - Existing user data for editing
- */
-
-/**
- * Wallet types enumeration
- * @readonly
- * @enum {string}
- */
-export const WalletType = {
-    TODAY: 'today',
-    HOLIDAY: 'holiday'
-};
-
-/**
- * Activity deposit status
- * @readonly
- * @enum {string}
- */
-export const DepositStatus = {
-    PENDING: 'pending',
-    HOLIDAY_DEPOSITED: 'holiday_deposited',
-    USED: 'used',
-    EXPIRED: 'expired'
-};
 
 /**
  * Days of week enumeration
@@ -102,22 +72,6 @@ export const DayOfWeek = {
     SUNDAY: 'Sunday'
 };
 
-
-/**
- /**
- * @typedef {Object} TimeDeposit
- * @property {string} sId - Unique identifier
- * @property {string} sUserId - User ID
- * @property {string} sActivityId - Related activity ID
- * @property {WalletType} sWalletType - Wallet type
- * @property {DepositStatus} sStatus - Deposit status
- * @property {number} nDepositedTime - Original deposited time in milliseconds
- * @property {number} nUsedDepositedTime - How mutch time was used
- * @property {number} nBonusTime - Bonus time earned in milliseconds
- * @property {number} nDepositTimestamp - When the deposit was made
- * @property {number} nWeekNumber - ISO week number
- * @property {number} nYear - Year of deposit
-
 /**
  * User settings
  * @typedef {Object} UserSettings
@@ -125,10 +79,6 @@ export const DayOfWeek = {
  * @property {boolean} bWeekendTimeToNextWeek - Move weekend time to next week
  * @property {number} nHolidayBonusPercentage - Bonus percentage for holiday wallet
  * @property {number} nWeeklyBonusPercentage - Bonus percentage for full week deposits
- */
-
-/**
- * Extended user type with settin
  */
 
 /**
