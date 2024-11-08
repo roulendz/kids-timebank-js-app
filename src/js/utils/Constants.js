@@ -3,6 +3,19 @@
  * Application constants
  * @const
  */
+
+/** @typedef {import('../types/Types').UserSettings} UserSettings */
+
+/**
+ * @type {UserSettings}
+ */
+const DEFAULT_USER_SETTINGS = {
+    bAutoDepositToHoliday: false,
+    bWeekendTimeToNextWeek: true,
+    nHolidayBonusPercentage: 10, // 10% bonus for holiday deposits
+    nWeeklyBonusPercentage: 5    // 5% bonus for full week deposits
+};
+
 export const Constants = {
     COLORS: {
         BACKGROUND: '#ADD8E6',
@@ -25,7 +38,10 @@ export const Constants = {
         sName: 'Kid 1',
         sNickname: 'Kid 1',
         nTimeBalance: 0,
-        arSchedule: []
+        arSchedule: [],
+        arActivityLog: [],
+        arDeposits: [],
+        obSettings: DEFAULT_USER_SETTINGS
     }
 };
 
@@ -37,3 +53,5 @@ export const INITIAL_STATE = {
     arUsers: [Constants.DEFAULT_USER],
     sCurrentUserId: null
 };
+
+export { DEFAULT_USER_SETTINGS };
