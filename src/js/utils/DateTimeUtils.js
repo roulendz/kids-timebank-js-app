@@ -3,7 +3,7 @@
  * Utility functions for date and time operations
  */
 
-import { WalletType, DepositStatus, DayOfWeek } from '../types/Types.js';
+import { DayOfWeek } from '../types/Types.js';
 
 /**
  * @typedef {import('../types/Types.js').TimeDeposit} TimeDeposit
@@ -121,19 +121,5 @@ export class DateTimeUtils {
             DayOfWeek.SATURDAY
         ];
         return days[dDate.getDay()];
-    }
-
-    /**
-     * Format deposit time info
-     * @param {TimeDeposit} deposit - Time deposit
-     * @returns {{depositedTime: string, bonusTime: string, totalTime: string}} Formatted deposit time info
-     */
-    static formatDepositTimeInfo(deposit) {
-        const totalTime = deposit.nDepositedTime + deposit.nBonusTime;
-        return {
-            depositedTime: this.formatDuration(deposit.nDepositedTime),
-            bonusTime: this.formatDuration(deposit.nBonusTime),
-            totalTime: this.formatDuration(totalTime)
-        };
     }
 }

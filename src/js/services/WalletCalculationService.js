@@ -1,15 +1,24 @@
 /**
  * @file src/js/services/WalletCalculationService.js
- * Service for handling wallet-specific calculations and operations
+ * @typedef {import('../types/Types').TimeDeposit} TimeDeposit
+* @typedef {import('../types/Types').Activity} Activity
  */
 
-import { WalletType, DepositStatus } from '../types/Types.js';
+/**
+ * @typedef {Object} DepositDisplay
+ * @property {TimeDeposit} deposit - The time deposit
+ * @property {number} nTimeLeft - Time remaining from deposit in milliseconds
+ * @property {string} sFormattedTime - Formatted time string
+ * @property {string} sFormattedTimeLeft - Formatted time left string
+ * @property {string} sFormattedDepositTime - Formatted deposit timestamp string
+ */
+
 import { TimeCalculationService } from './TimeCalculationService.js';
 import { generateId } from '../utils/IdUtils.js';
+import { DateTimeUtils } from '../utils/DateTimeUtils.js';
 
 /**
- * @typedef {import('../types/Types').TimeDeposit} TimeDeposit
- * @typedef {import('../types/Types').Activity} Activity
+
  */
 
 export class WalletCalculationService {
@@ -105,24 +114,6 @@ export class WalletCalculationService {
     calculateRemainingTime(activity) {
         return Math.max(0, activity.nDuration - activity.nUsedDuration);
     }
-    
-    /**
-     * Calculate total available time in today's wallet
-     * @param {TimeDeposit[]} deposits - Array of all deposits
-     * @returns {number} Total available time in milliseconds
-     */
-    calculateTodayWalletBalance(deposits) {
-        const todayStart = new Date().setHours(0, 0, 0, 0);
-        
-        return deposits
-            .filter(deposit => 
-                deposit.nDepositTimestamp >= todayStart &&
-                deposit.sWalletType === WalletType.TODAY &&
-                deposit.sStatus === DepositStatus.PENDING
-            )
-            .reduce((total, deposit) => 
-                total + deposit.nDepositedTime + deposit.nBonusTime, 0);
-    }
 
     /**
      * Calculate total time in holiday wallet
@@ -131,33 +122,37 @@ export class WalletCalculationService {
      */
     calculateHolidayWalletBalance(deposits) {
         return deposits
-            .filter(deposit => 
-                deposit.sWalletType === WalletType.HOLIDAY &&
-                deposit.sStatus === DepositStatus.PENDING
-            )
             .reduce((total, deposit) => 
-                total + deposit.nDepositedTime + deposit.nBonusTime, 0);
+                total + deposit.nDepositedDuration + deposit.nAccumulatedBonus, 0);
     }
 
     /**
-     * Get today's deposits with their details
-     * @param {TimeDeposit[]} deposits - Array of all deposits
-     * @param {Activity[]} activities - Array of all activities
-     * @returns {Array<{deposit: TimeDeposit, activity: Activity}>} Today's deposits with activity details
+     * Get today's deposits with their usage details
+     * @param {TimeDeposit[]} arDeposits - Array of all deposits
+     * @returns {DepositDisplay[]} Today's deposits with formatted display information
      */
-    getTodayDeposits(deposits, activities) {
-        const todayStart = new Date().setHours(0, 0, 0, 0);
-        const activitiesMap = new Map(activities.map(activity => [activity.sId, activity]));
-
-        return deposits
-            .filter(deposit => 
-                deposit.nDepositTimestamp >= todayStart &&
-                deposit.sWalletType === WalletType.TODAY
+    getTodayDeposits(arDeposits) {
+        const nTodayStart = new Date().setHours(0, 0, 0, 0);
+        
+        return arDeposits
+            .filter(obDeposit => 
+                obDeposit.nDepositTimestamp >= nTodayStart
             )
-            .map(deposit => ({
-                deposit,
-                activity: activitiesMap.get(deposit.sActivityId)
-            }))
+            .map(obDeposit => {
+                // Calculate time left from deposit
+                const nTimeLeft = Math.max(
+                    obDeposit.nDepositedDuration + obDeposit.nAccumulatedBonus,
+                    0
+                );
+
+                return {
+                    deposit: obDeposit,
+                    nTimeLeft,
+                    sFormattedTime: DateTimeUtils.formatDuration(obDeposit.nDepositedDuration + obDeposit.nAccumulatedBonus),
+                    sFormattedTimeLeft: DateTimeUtils.formatDuration(nTimeLeft),
+                    sFormattedDepositTime: DateTimeUtils.formatDuration(obDeposit.nDepositTimestamp)
+                };
+            })
             .sort((a, b) => b.deposit.nDepositTimestamp - a.deposit.nDepositTimestamp);
     }
 
@@ -169,7 +164,7 @@ export class WalletCalculationService {
      */
     calculateDepositBonus(deposit, bonusPercentage) {
         return this.timeCalculationService.calculateBonus(
-            deposit.nDepositedTime,
+            deposit.nDepositedDuration,
             bonusPercentage
         );
     }
@@ -180,26 +175,6 @@ export class WalletCalculationService {
      * @returns {boolean}
      */
     canTransferToHoliday(deposit) {
-        return deposit.sWalletType === WalletType.TODAY && 
-               deposit.sStatus === DepositStatus.PENDING;
-    }
-
-    /**
-     * Prepare deposit for holiday wallet transfer
-     * @param {TimeDeposit} deposit - Original deposit
-     * @param {number} holidayBonusPercentage - Holiday wallet bonus percentage
-     * @returns {TimeDeposit} New holiday deposit
-     */
-    prepareHolidayTransfer(deposit, holidayBonusPercentage) {
-        const holidayBonus = this.calculateDepositBonus(deposit, holidayBonusPercentage);
-        
-        return {
-            ...deposit,
-            sId: generateId(), // You'll need to import generateId
-            sWalletType: WalletType.HOLIDAY,
-            nDepositTimestamp: Date.now(),
-            nBonusTime: holidayBonus,
-            sStatus: DepositStatus.PENDING
-        };
+        return deposit.bIsAvailableForDeposit === true;
     }
 }

@@ -9,7 +9,7 @@
  */
 
 import { generateId } from '../utils/IdUtils.js';
-import { stateManager } from './StateManager.js';
+import { DateTimeUtils } from '../utils/DateTimeUtils.js';
 
 /**
  * Service for handling time tracking and usage functionality
@@ -54,11 +54,11 @@ export class TimeTrackingService {
      */
     stopTracking(sDescription) {
         const nEndTime = Date.now();
-        
+        const dCurrentDate = new Date();
+        const nWeekNumber = DateTimeUtils.getWeekNumber(dCurrentDate);
         /** @type {Activity} */
         const obActivity = {
             sId: generateId(),
-            sType: 'work',
             sDescription,
             nStartTime: this.obState.nStartTime,
             nEndTime,
@@ -66,7 +66,8 @@ export class TimeTrackingService {
             sUserId: this.sUserId,
             nUsedDuration: 0,
             bIsAvailableForDeposit: true,
-            bIsUsed: false
+            nWeekNumber: nWeekNumber,
+            nYear: dCurrentDate.getFullYear(),
         };
 
         this.obState = {

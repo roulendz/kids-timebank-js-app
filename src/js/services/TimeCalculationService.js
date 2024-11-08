@@ -7,7 +7,8 @@
  * @typedef {import('../types/Types').TimeDeposit} TimeDeposit
  */
 
-import { WalletType } from '../types/Types.js';
+import { DateTimeUtils } from '../utils/DateTimeUtils.js';
+import { generateId } from '../utils/IdUtils.js';
 
 export class TimeCalculationService {
     /**
@@ -34,20 +35,18 @@ export class TimeCalculationService {
     }
 
     /**
-     * Calculate total weekend bonus for deposits
+     * Calculate total weekend bonus for this week's deposits
      * @param {TimeDeposit[]} arDeposits - Array of deposits
-     * @param {number} nBonusPercentage - Weekly bonus percentage
      * @returns {number} Total weekend bonus in milliseconds
      */
-    calculateWeekendBonus(arDeposits, nBonusPercentage) {
-        const weekendDeposits = arDeposits.filter(deposit => {
-            const depositDate = new Date(deposit.nDepositTimestamp);
-            return this.isWeekend(depositDate);
-        });
-
-        return weekendDeposits.reduce((total, deposit) => {
-            return total + this.calculateBonus(deposit.nDepositedTime, nBonusPercentage);
-        }, 0);
+    calculateWeekendBonus(arDeposits) {
+        // Get current week number
+        const nCurrentWeek = DateTimeUtils.getWeekNumber(new Date());
+        
+        // Filter deposits from this week and sum their accumulated bonuses
+        return arDeposits
+            .filter(obDeposit => obDeposit.nWeekNumber === nCurrentWeek)
+            .reduce((nTotal, obDeposit) => nTotal + (obDeposit.nAccumulatedBonus || 0), 0);
     }
 
     /**
@@ -114,13 +113,9 @@ export class TimeCalculationService {
      * @param {TimeDeposit} deposit - Time deposit to calculate
      * @returns {number} Potential loss in milliseconds
      */
-    calculatePotentialLoss(deposit) {
-        if (deposit.sWalletType !== WalletType.HOLIDAY) {
-            return 0;
-        }
-        
+    calculatePotentialLoss(deposit) {        
         // Return current bonus plus potential future bonus
-        return deposit.nBonusTime;
+        return deposit.nAccumulatedBonus;
     }
 
     /**
@@ -138,48 +133,6 @@ export class TimeCalculationService {
 
         // Require deposits on at least 5 different days
         return uniqueDays.size >= 5;
-    }
-
-    async stopTracking() {
-        if (!this.trackingState.bIsTracking) return;
-    
-        const endTime = Date.now();
-        const duration = endTime - this.trackingState.nStartTime;
-    
-        const activity = {
-            sId: generateId(),
-            sType: 'work',
-            sDescription: this.trackingState.sCurrentActivityDescription || 'Unnamed activity',
-            nStartTime: this.trackingState.nStartTime,
-            nEndTime: endTime,
-            nDuration: duration,
-            sUserId: this.stateManager.getCurrentUserId()
-        };
-    
-        const deposit = {
-            sId: generateId(),
-            sUserId: activity.sUserId,
-            sActivityId: activity.sId,
-            sWalletType: WalletType.TODAY,
-            sStatus: DepositStatus.PENDING,
-            nDepositedTime: duration,
-            nBonusTime: 0,
-            nDepositTimestamp: Date.now(),
-            nWeekNumber: this.timeCalculationService.calculateWeekNumber(new Date()), // Call calculateWeekNumber correctly
-            nYear: new Date().getFullYear()
-        };
-    
-        await this.stateManager.addActivity(activity);
-        await this.stateManager.addDeposit(deposit);
-    
-        clearInterval(this.timerInterval);
-        this.trackingState.bIsTracking = false;
-        this.trackingState.nStartTime = null;
-        this.trackingState.sCurrentActivityDescription = '';
-    
-        this.timerContainer.classList.add('hidden');
-        this.startButtonContainer.classList.remove('hidden');
-        this.updateActivitiesList();
     }
     
 }
