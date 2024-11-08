@@ -314,10 +314,16 @@ export class HolidayWallet {
                 // Update user state
                 await this.stateManager.updateUser(obUser);
 
-                // Refresh both holiday and activity displays
+                // Refresh holiday display
                 await this.refreshHolidayDisplay();
-                // Dispatch event to notify TodayWallet to refresh activities
-                document.dispatchEvent(new CustomEvent('activityListChanged'));
+
+                // Dispatch event for TodayWallet updates
+                document.dispatchEvent(new CustomEvent('activityListChanged', {
+                    detail: {
+                        activity: obNewActivity,
+                        action: 'cancel-deposit'
+                    }
+                }));
 
                 // Show success message
                 this.modalManager.showSuccess({
