@@ -3,9 +3,8 @@
  * Service for managing application state
  */
 
-import { Constants, INITIAL_STATE } from '../utils/Constants.js';
+import { Constants, INITIAL_STATE, DEFAULT_USER_SETTINGS } from '../utils/Constants.js';
 import { generateId } from '../utils/IdUtils.js';
-import { DepositStatus } from '../types/Types.js';
 /**
  * @typedef {import('../types/Types').User} User
  * @typedef {import('../types/Types').Schedule} Schedule
@@ -43,6 +42,7 @@ export class StateManager {
     async init() {
         await this.loadState();
         this.ensureDefaultUser();
+        this.ensureUsersState();
     }
 
     /**
@@ -170,18 +170,7 @@ export class StateManager {
         if (!obUser.arDeposits) {
             obUser.arDeposits = [];
         }
-
-        // Check if the deposit already exists to avoid duplicates
-        const bAlreadyDeposited = obUser.arDeposits.some(deposit => 
-            deposit.sActivityId === obDeposit.sActivityId &&
-            deposit.sStatus === DepositStatus.HOLIDAY_DEPOSITED
-        );
-
-        if (bAlreadyDeposited) {
-            console.warn(`Activity ${obDeposit.sActivityId} has already been deposited.`);
-            return;
-        }
-
+        
         obUser.arDeposits.push(obDeposit);
         this.saveState();
     }
@@ -233,15 +222,60 @@ export class StateManager {
 
     /**
      * Get user settings by user ID
-     * @param {string} userId - The user ID to get settings for
-     * @returns {Promise<UserSettings|null>} - User settings object or null if not found
+     * @param {string} sUserId - The user ID to get settings for
+     * @returns {Promise<UserSettings>} - User settings object
      */
-    async getUserSettings(userId) {
-        const user = this.getUser(userId);
-        if (user && user.obSettings) {
-            return user.obSettings;
+    async getUserSettings(sUserId) {
+        const obUser = this.getUser(sUserId);
+        if (!obUser) {
+            throw new Error(`User with ID ${sUserId} not found`);
         }
-        return null;
+
+        this.ensureUserSettings(obUser);
+        return obUser.obSettings;
+    }
+
+    /**
+     * Update user settings
+     * @param {string} sUserId - User ID
+     * @param {Partial<UserSettings>} obNewSettings - Settings to update
+     * @returns {Promise<void>}
+     */
+    async updateUserSettings(sUserId, obNewSettings) {
+        const obUser = this.getUser(sUserId);
+        if (!obUser) {
+            throw new Error(`User with ID ${sUserId} not found`);
+        }
+
+        this.ensureUserSettings(obUser);
+        obUser.obSettings = {
+            ...obUser.obSettings,
+            ...obNewSettings
+        };
+        
+        this.saveState();
+    }
+
+    /**
+     * Initialize default state for user if missing
+     * @param {User} obUser - User to initialize
+     * @private
+     */
+    initializeUserState(obUser) {
+        if (!obUser.arActivityLog) obUser.arActivityLog = [];
+        if (!obUser.arDeposits) obUser.arDeposits = [];
+        if (!obUser.obSettings) obUser.obSettings = { ...DEFAULT_USER_SETTINGS };
+    }
+
+    /**
+     * Ensure all users have required state
+     * @private
+     */
+    ensureUsersState() {
+        this.obState.arUsers.forEach(user => {
+            this.initializeUserState(user);
+        });
+        this.saveState();
     }
 
     /**
@@ -270,12 +304,27 @@ export class StateManager {
             sName,
             sNickname,
             nTimeBalance: 0,
-            arSchedule
+            arSchedule,
+            arActivityLog: [],
+            arDeposits: [],
+            obSettings: { ...DEFAULT_USER_SETTINGS } // Clone default settings
         };
         
         this.obState.arUsers.push(obNewUser);
         this.saveState();
         return obNewUser.sId;
+    }
+
+    /**
+     * Ensure user has default settings
+     * @param {User} obUser - User to check
+     * @private
+     */
+    ensureUserSettings(obUser) {
+        if (!obUser.obSettings) {
+            obUser.obSettings = { ...DEFAULT_USER_SETTINGS };
+            this.saveState();
+        }
     }
 
     /**
