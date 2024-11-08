@@ -264,14 +264,9 @@ export class ActivityTrackerTemplate {
                 <div class="mb-2">
                     <span id="weekendBonus" class="text-xs md:text-sm text-gray-600"></span>
                 </div>
-                <div class="flex-1 flex flex-col">
-                    <div id="holidayWalletContent" class="flex-1 overflow-y-auto">
-                        <!-- Holiday wallet content will be inserted here -->
-                    </div>
-                    <div id="todayWalletContent" class="flex-1 overflow-y-auto mt-4">
-                        <!-- Today's wallet content will be inserted here -->
-                    </div>
-                </div>
+                <div id="holidayWalletContent" class="flex-1 overflow-y-auto">
+                    <!-- Holiday wallet content will be inserted here -->
+                </div>                
             </div>
         `;
     
