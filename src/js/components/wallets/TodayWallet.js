@@ -26,7 +26,6 @@
  * @property {HTMLDivElement} timerContainer
 */
 
-import { WalletType, DepositStatus } from '../../types/Types.js';
 import { generateId } from '../../utils/IdUtils.js';
 import { WalletCalculationService } from '../../services/WalletCalculationService.js';
 import { DateTimeUtils } from '../../utils/DateTimeUtils.js';
@@ -78,6 +77,11 @@ export class TodayWallet {
         
         // Defer initialization to ensure DOM is ready
         requestAnimationFrame(() => this.initialize());
+
+        document.addEventListener('activityListChanged', async () => {
+            await this.updateActivitiesList();
+            await this.updateWalletDisplay();
+        });
     }
 
     /**
@@ -138,7 +142,6 @@ async initializeElements() {
     this.startUsageContainer = /** @type {HTMLDivElement} */ (document.getElementById('startUsageContainer'));
     this.activitiesList = /** @type {HTMLDivElement} */ (document.getElementById('activitiesList'));
     this.todayTotalTimeLeft = /** @type {HTMLDivElement} */ (document.getElementById('todayTotalTimeLeft'));
-    this.todayWalletContent = /** @type {HTMLDivElement} */ (document.getElementById('todayWalletContent'));
 
     /** @type {Array<{name: string, el: HTMLElement|null}>} */
     const elementChecks = [
@@ -154,8 +157,7 @@ async initializeElements() {
         { name: 'usageTimerContainer', el: this.usageTimerContainer },
         { name: 'startUsageContainer', el: this.startUsageContainer },
         { name: 'activitiesList', el: this.activitiesList },
-        { name: 'todayTotalTimeLeft', el: this.todayTotalTimeLeft },
-        { name: 'todayWalletContent', el: this.todayWalletContent }
+        { name: 'todayTotalTimeLeft', el: this.todayTotalTimeLeft }
     ];
 
     const missingElements = elementChecks
@@ -189,8 +191,7 @@ async initializeElements() {
             this.usageTimerContainer,
             this.startUsageContainer,
             this.activitiesList,
-            this.todayTotalTimeLeft,
-            this.todayWalletContent
+            this.todayTotalTimeLeft
         ];
 
         // Check if all div elements exist
@@ -211,16 +212,18 @@ async initializeElements() {
         // Listen for page unload to save state
         window.addEventListener('beforeunload', () => this.saveTrackingState());
 
-        if (this.todayWalletContent) {
-            this.todayWalletContent.addEventListener('click', (e) => {
-                // Type assertion for the event target
-                const obTarget = /** @type {HTMLElementWithData} */ (e.target);
+        if (this.activitiesList) {
+            this.activitiesList.addEventListener('click', async (event) => {
+                const userId = this.stateManager.getCurrentUserId();
+                const obTarget = /** @type {HTMLElementWithData} */ (event.target);
+                // Look for the closest button with transfer action
                 const transferButton = obTarget.closest('[data-action="transfer-to-holiday"]');
                 if (transferButton) {
-                    console.log('Transfer button clicked:', transferButton);
-                    const sDepositId = /** @type {HTMLElementWithData} */ (transferButton).dataset.depositId;
-                    if (sDepositId) {
-                        this.handleHolidayTransfer(sDepositId);
+                    const sActivityId = transferButton.getAttribute('data-activity-id');
+                    const arActivitiesLog = await this.stateManager.getActivities(userId);
+                    const obActivity = arActivitiesLog.find(a => a.sId === sActivityId);
+                    if (obActivity) {
+                        await this.handleHolidayTransfer(obActivity);
                     }
                 }
             });
@@ -228,12 +231,15 @@ async initializeElements() {
 
         // Deposit button event binding
         this.activitiesList.addEventListener('click', async (event) => {
+            const userId = this.stateManager.getCurrentUserId();
             const obTarget = /** @type {HTMLElementWithData} */ (event.target);
             const depositButton = obTarget.closest('.deposit-holiday');
             if (depositButton) {
                 const sActivityId = /** @type {HTMLElementWithData} */ (depositButton).dataset.activityId;
+                const arActivitiesLog = await this.stateManager.getActivities(userId);
+                const obActivity = arActivitiesLog.find(a => a.sId === sActivityId);
                 if (sActivityId) {
-                    await this.handleHolidayTransfer(sActivityId);
+                    await this.handleHolidayTransfer(obActivity);
                 }
             }
         });
@@ -494,12 +500,12 @@ async initializeElements() {
             this.todayTotalTimeLeft.textContent = DateTimeUtils.formatDuration(nTotalAvailable);
         }
     
-        if (this.todayWalletContent) { // Add existence check
-            const arTodayDeposits = this.walletCalculationService.getTodayDeposits(arDeposits, arActivities);
-            this.todayWalletContent.innerHTML = this.createWalletContent(arTodayDeposits);
-        } else {
-            console.warn('todayWalletContent is missing, unable to update wallet display.');
-        }
+        // if (this.todayWalletContent) { // Add existence check
+        //     const arTodayDeposits = this.walletCalculationService.getTodayDeposits(arDeposits, arActivities);
+        //     this.todayWalletContent.innerHTML = this.createWalletContent(arTodayDeposits);
+        // } else {
+        //     console.warn('todayWalletContent is missing, unable to update wallet display.');
+        // }
     }
      /**
      * Create HTML for wallet deposits
@@ -518,9 +524,9 @@ async initializeElements() {
                 </div>
                 <div class="flex items-center gap-4">
                     <div class="text-right">
-                        <div class="font-medium">${DateTimeUtils.formatDuration(deposit.nDepositedTime)}</div>
-                        ${deposit.nBonusTime > 0 ? 
-                            `<div class="text-sm text-green-600">+${DateTimeUtils.formatDuration(deposit.nBonusTime)} bonus</div>` : 
+                        <div class="font-medium">${DateTimeUtils.formatDuration(deposit.nDepositTimestamp)}</div>
+                        ${deposit.nAccumulatedBonus > 0 ? 
+                            `<div class="text-sm text-green-600">+${DateTimeUtils.formatDuration(deposit.nAccumulatedBonus)} bonus</div>` : 
                             ''}
                     </div>
                     ${this.walletCalculationService.canTransferToHoliday(deposit) ? `
@@ -564,6 +570,8 @@ async initializeElements() {
 
         const endTime = Date.now();
         const duration = endTime - this.trackingState.nStartTime;
+        const dCurrentDate = new Date();
+        const nWeekNumber = DateTimeUtils.getWeekNumber(dCurrentDate);
 
         try {
             // Create activity record
@@ -574,11 +582,11 @@ async initializeElements() {
                 nStartTime: this.trackingState.nStartTime,
                 nEndTime: endTime,
                 nDuration: duration,
-                sType: 'work',
                 nUsedDuration: 0,
                 bIsAvailableForDeposit: true,
                 sUserId: this.stateManager.getCurrentUserId(),
-                bIsUsed: false
+                nWeekNumber: nWeekNumber,
+                nYear: dCurrentDate.getFullYear(),
             };
 
             // Save activity
@@ -662,35 +670,95 @@ async initializeElements() {
         }
     }
 
-     /**
+    /**
      * Handle transfer to holiday wallet
-     * @param {string} depositId
+     * @param {Activity} obActivity - Activity to transfer
      * @private
      */
-    async handleHolidayTransfer(depositId) {
-        const deposits = await this.stateManager.getDeposits(this.stateManager.getCurrentUserId());
-        const deposit = deposits.find(d => d.sId === depositId);
-        
-        if (!deposit || !this.walletCalculationService.canTransferToHoliday(deposit)) {
-            return;
+    async handleHolidayTransfer(obActivity) {
+        try {
+            const sUserId = this.stateManager.getCurrentUserId();
+            const arActivities = await this.stateManager.getActivities(sUserId);
+            
+            if (!obActivity || !obActivity.bIsAvailableForDeposit) {
+                throw new Error('Activity not available for deposit');
+            }
+
+            // Get user settings for bonus calculation
+            const obUserSettings = await this.stateManager.getUserSettings(sUserId);
+            if (!obUserSettings) {
+                throw new Error('User settings not found');
+            }
+
+            const dCurrentDate = new Date();
+            const nWeekNumber = DateTimeUtils.getWeekNumber(dCurrentDate);
+
+            // Calculate deposit and bonus times
+            const nDepositedDuration = obActivity.nDuration - (obActivity.nUsedDuration || 0);
+            const nAccumulatedBonus = Math.floor(nDepositedDuration * 
+                                    (obUserSettings.nHolidayBonusPercentage / 100));
+
+            // Create holiday deposit with proper structure
+            const obNewDeposit = {
+                sId: generateId(),
+                sDescription: obActivity.sDescription, // Include description
+                sUserId: sUserId,
+                nStartTime: obActivity.nStartTime,    // Include original times
+                nEndTime: obActivity.nEndTime,
+                nDuration: obActivity.nDuration,
+                nUsedDuration: 0,                     // Reset for new deposit
+                nDepositedDuration: nDepositedDuration, // Renamed from nDepositedTime
+                nAccumulatedBonus: nAccumulatedBonus,   // Renamed from nBonusTime
+                nDepositTimestamp: Date.now(),
+                nWeekNumber: nWeekNumber,
+                nYear: dCurrentDate.getFullYear(),
+                bIsAvailableForDeposit: true
+            };
+
+            // Get current user state
+            const obUser = await this.stateManager.getUser(sUserId);
+            if (!obUser) {
+                throw new Error('User not found');
+            }
+
+            // Remove activity from arActivityLog
+            obUser.arActivityLog = obUser.arActivityLog.filter(a => a.sId !== obActivity.sId);
+
+            // Add deposit to arDeposits
+            if (!obUser.arDeposits) {
+                obUser.arDeposits = [];
+            }
+            obUser.arDeposits.push(obNewDeposit);
+
+            // Update user state
+            await this.stateManager.updateUser(obUser);
+
+            // Play deposit sound
+            const obDepositSound = new Audio('/src/audio/cha-ching-7053.mp3');
+            await obDepositSound.play().catch(console.error);
+
+            // Show success message
+            this.modalManager.showSuccess({
+                sTitle: 'Success!',
+                sContent: `Activity transferred to holiday wallet with ${obUserSettings.nHolidayBonusPercentage}% bonus!`
+            });
+
+            // Notify holiday wallet
+            document.dispatchEvent(new CustomEvent('depositAdded', { 
+                detail: { deposit: obNewDeposit }
+            }));
+
+            // Update UI
+            await this.updateActivitiesList();
+            await this.updateWalletDisplay();
+
+        } catch (error) {
+            console.error('Failed to transfer to holiday wallet:', error);
+            this.modalManager.showError({
+                sTitle: 'Transfer Failed',
+                sContent: error.message || 'Unable to transfer activity to holiday wallet.'
+            });
         }
-
-        // Get user settings for bonus calculation
-        const userSettings = await this.stateManager.getUserSettings(deposit.sUserId);
-        const holidayDeposit = this.walletCalculationService.prepareHolidayTransfer(
-            deposit, 
-            userSettings.nHolidayBonusPercentage
-        );
-
-        // Update original deposit status and add new holiday deposit
-        await this.stateManager.updateDeposit({
-            ...deposit,
-            sStatus: DepositStatus.HOLIDAY_DEPOSITED
-        });
-        await this.stateManager.addDeposit(holidayDeposit);
-
-        // Update display
-        await this.updateWalletDisplay();
     }
 
     /**
@@ -748,10 +816,13 @@ async initializeElements() {
                         </span>` : 
                         ''}
                     ${!bIsFullyUsed ? `
-                        <button class="deposit-holiday p-2 rounded bg-blue-100 text-blue-600"
-                                data-action="transfer-to-holiday" data-activity-id="${obActivity.sId}">
-                            <span class="sr-only">Deposit to Holiday Wallet</span>
-                            🏦
+                        <button 
+                            class="transfer-to-holiday px-3 py-2 rounded bg-blue-100 hover:bg-blue-200 text-blue-600 
+                                flex items-center gap-2 transition-colors duration-200"
+                            data-action="transfer-to-holiday" 
+                            data-activity-id="${obActivity.sId}">
+                            <span>To Holiday</span>
+                            <span class="text-lg">🏦</span>
                         </button>
                     ` : ''}
                 </div>
